@@ -40,24 +40,27 @@ Sys.setenv(LANG = "en")
 
 ```{r}
 # Packages
-library(knitr) # For knitr to html
-library(rmarkdown) # For formatting the document
-library(tidyverse) # Standard datasciewnce toolkid (dplyr, ggplot2 et al.)
-library(data.table) # for reading in data ect. 
-library(magrittr) # For advanced piping (%>% et al.)
-library(igraph) # For network analysis
-library(tidygraph) # For tidy-style graph manipulation
-library(ggraph) # For ggplot2 style graph plotting
-library(Matrix) # For some matrix functionality
-library(ggforce) # Awesome plotting
-library(kableExtra) # Formatting for tables
-library(car) # recode functions
-library(tidytext) # Structure text within tidyverse
-library(topicmodels) # For topic modelling
-library(tm) # text mining library
-library(quanteda) # for LSA (latent semantic analysis)
-library(uwot) # for UMAP
-library(dbscan) # for density based clustering
+
+if (!require("pacman")) install.packages("pacman") # package for loading and checking packages :)
+pacman::p_load(knitr, # For knitr to html
+               rmarkdown, # For formatting the document
+               tidyverse, # Standard datasciewnce toolkid (dplyr, ggplot2 et al.)
+               data.table, # for reading in data ect. 
+               magrittr,# For advanced piping (%>% et al.)
+               igraph, # For network analysis
+               tidygraph, # For tidy-style graph manipulation
+               ggraph, # For ggplot2 style graph plotting
+               Matrix, # For some matrix functionality
+               ggforce, # Awesome plotting
+               kableExtra, # Formatting for tables
+               car, # recode functions 
+               tidytext, # Structure text within tidyverse
+               topicmodels, # For topic modelling
+               tm, # text mining library
+               quanteda, # for LSA (latent semantic analysis)
+               uwot, # for UMAP
+               dbscan# for density based clustering
+               )
 
 # I set a seed for reproduciability
 set.seed(123) # Have to be set every time a rng proces is being made. 
