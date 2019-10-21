@@ -1,0 +1,63 @@
+---
+title: "M2-Project"
+author: "Mathias Flinta"
+date: "21/10/2019"
+output:
+  html_document: 
+    toc: TRUE
+    toc_float: TRUE
+    df_print: paged
+    code_folding: hide
+    number_sections: TRUE
+---
+
+# Introduction and set-up
+
+This project is made to be read in html, so open the html file in your preferred webbrowser. As standard the code is hidden in this document, but you can show all by pressing the button "Code" in the top right of the document. You can also show individual chunks of code by pressing the buttons "Code" which are placed around in the document. 
+
+Link for google colab: 
+
+Link for github: 
+
+First i have some personal setup in my local R-Markdown on how i want to display warnings ect. And then i load my packages. 
+```{r}
+### Knitr options
+knitr::opts_chunk$set(warning=FALSE,
+                     message=FALSE,
+                     fig.align="center"
+                     )
+
+options(warn=-1) # Hides all warnings, as the knitr options only work on local R-Markdown mode. 
+
+Sys.setenv(LANG = "en")
+```
+
+
+```{r}
+# Packages
+library(knitr) # For knitr to html
+library(rmarkdown) # For formatting the document
+library(tidyverse) # Standard datasciewnce toolkid (dplyr, ggplot2 et al.)
+library(data.table) # for reading in data ect. 
+library(magrittr) # For advanced piping (%>% et al.)
+library(igraph) # For network analysis
+library(tidygraph) # For tidy-style graph manipulation
+library(ggraph) # For ggplot2 style graph plotting
+library(Matrix) # For some matrix functionality
+library(ggforce) # Awesome plotting
+library(kableExtra) # Formatting for tables
+library(car) # recode functions
+library(tidytext) # Structure text within tidyverse
+library(topicmodels) # For topic modelling
+library(tm) # text mining library
+library(quanteda) # for LSA (latent semantic analysis)
+library(uwot) # for UMAP
+library(dbscan) # for density based clustering
+
+# I set a seed for reproduciability
+set.seed(123) # Have to be set every time a rng proces is being made. 
+```
+
+
+
+
