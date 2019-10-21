@@ -88,7 +88,7 @@ Stemming:
 
 ```{r}
 tokens_raw <- unnest_tokens(data_raw, word, reviews.text)
-str(data_tokens)
+str(tokens_raw)
 ```
 155.258 tokens. 
 
