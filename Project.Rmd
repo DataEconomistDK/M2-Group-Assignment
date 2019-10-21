@@ -63,10 +63,28 @@ set.seed(123) # Have to be set every time a rng proces is being made.
 
 Now we load the data. 
 ```{r}
-data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv")
+data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
+  select(name, reviews.rating, reviews.text, reviews.title) %>% 
+  mutate(id = row_number())
 ```
 
-## 
+# NLP - preperation
+
+
+
+# Network analysis
+
+
+
+
+# NLP
+
+
+
+# Machine learning
+
+
+
 
 
 
