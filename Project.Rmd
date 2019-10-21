@@ -79,13 +79,6 @@ data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv"
   mutate(id = row_number())
 ```
 
-# NLP - preperation
-Cleaning: 
-Stemming: 
-
-
-
-
 ```{r}
 tokens_raw <- unnest_tokens(data_raw, word, reviews.text)
 str(tokens_raw)
@@ -96,7 +89,9 @@ Cleaning numbers and weird characters.
 ```{r}
 tokens_clean <- tokens_raw %>%
   mutate(word = word %>% str_remove_all("[^[:alnum:]]")) %>% 
-  mutate(word = word %>% str_remove_all("[[:digit:]]"))
+  mutate(word = word %>% str_remove_all("[[:digit:]]")) %>% 
+  filter(str_length(word) > 0)
+
 str(tokens_clean)
 ```
 
