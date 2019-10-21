@@ -20,7 +20,11 @@ Link for google colab:
 Link for github: 
 
 R-rules:
-
+Data may not be overwritten, but may always be given new meaningfull names. data_raw, data_tidy ect. 
+Always lower case letters. 
+Inline code comments are only for technical use ect. All other explanation should be text. 
+We load all packages in the top. 
+We write in document without any branches. 
 
 
 ## Loading packages
@@ -76,12 +80,26 @@ data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv"
 ```
 
 # NLP - preperation
+Cleaning: 
+Stemming: 
+
+
+
 
 ```{r}
-data_tokens <- unnest_tokens(data_raw, word, reviews.text)
+tokens_raw <- unnest_tokens(data_raw, word, reviews.text)
 str(data_tokens)
 ```
 155.258 tokens. 
+
+Cleaning numbers and weird characters. 
+```{r}
+tokens_clean <- tokens_raw %>%
+  mutate(word = word %>% str_remove_all("[^[:alnum:]]")) %>% 
+  mutate(word = word %>% str_remove_all("[[:digit:]]"))
+str(tokens_clean)
+```
+
 
 
 # Network analysis
