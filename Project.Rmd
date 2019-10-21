@@ -19,6 +19,10 @@ Link for google colab:
 
 Link for github: 
 
+R-rules:
+
+
+
 ## Loading packages
 
 First i have some personal setup in my local R-Markdown on how i want to display warnings ect. And then i load my packages. 
@@ -70,6 +74,11 @@ data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv"
 
 # NLP - preperation
 
+```{r}
+data_tokens <- unnest_tokens(data_raw, word, reviews.text)
+str(data_tokens)
+```
+155.258 tokens. 
 
 
 # Network analysis
