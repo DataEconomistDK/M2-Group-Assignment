@@ -19,6 +19,8 @@ Link for google colab:
 
 Link for github: 
 
+## Loading packages
+
 First i have some personal setup in my local R-Markdown on how i want to display warnings ect. And then i load my packages. 
 ```{r}
 ### Knitr options
@@ -31,7 +33,6 @@ options(warn=-1) # Hides all warnings, as the knitr options only work on local R
 
 Sys.setenv(LANG = "en")
 ```
-
 
 ```{r}
 # Packages
@@ -58,9 +59,14 @@ library(dbscan) # for density based clustering
 set.seed(123) # Have to be set every time a rng proces is being made. 
 ```
 
+## Loading and filtering data
+
 Now we load the data. 
+```{r}
+data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv")
+```
 
-
+## 
 
 
 
