@@ -58,6 +58,10 @@ library(dbscan) # for density based clustering
 set.seed(123) # Have to be set every time a rng proces is being made. 
 ```
 
+Now we load the data. 
+
+
+
 
 
 
