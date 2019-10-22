@@ -90,6 +90,7 @@ Cleaning numbers and weird characters.
 tokens_clean <- tokens_raw %>%
   mutate(word = word %>% str_remove_all("[^[:alnum:]]")) %>% 
   mutate(word = word %>% str_remove_all("[[:digit:]]")) %>% 
+  mutate(word = word %>% str_remove_all("[^a-zA-Z0-9]")) %>%
   filter(str_length(word) > 0)
 
 str(tokens_clean)
@@ -98,7 +99,19 @@ str(tokens_clean)
 
 
 # Network analysis
+```{r}
+tokens_clean %>% count(word, sort=TRUE) %>% head(100)
+```
+```{r}
+tokens_clean %<>%
+  anti_join(stop_words)
+```
 
+
+
+```{r}
+own_stopwords <- tibble(word= c("im", "ive"), lexicon = "OWN")
+```
 
 
 # NLP
