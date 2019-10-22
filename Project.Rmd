@@ -73,7 +73,8 @@ pacman::p_load(knitr, # For knitr to html
                wordcloud, 
                textstem, # for textstemming 
                tidyr,
-               widyr
+               widyr,
+               reshape2
                )
 
 # I set a seed for reproduciability
@@ -377,8 +378,7 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE,
 
 
 ## TF-IDF
-- what is tf-idf
-- comment on not running a tf-idf
+We tried to run a tf-idf analysis but we couldn't really say anything from the analysis, because there's a lot of documents. If we were analyzing a number of books, the analyses may have made sence. 
 
 ##Sentiment analysis
 
@@ -413,14 +413,43 @@ tokens_stemmed %>% inner_join(get_sentiments("bing")) %>% count(reviews.rating, 
 ```
 
 ```{r}
-tokens_stemmed %>%
+tokens_stemmed_bing = tokens_stemmed %>%
 inner_join(get_sentiments("bing")) %>%
 count(reviews.rating, sentiment) %>%
 spread(sentiment, n) %>%
 mutate(overall_sentiment = positive - negative)
 ```
 
+```{r}
+ggplot(
+tokens_stemmed_bing,
+aes(x = reviews.rating, y = overall_sentiment, fill = as.factor(reviews.rating))
+) +
+geom_col(show.legend = FALSE) +
+coord_flip() +
+labs(
+title =
+"Overall Sentiment by Stars"
+,
+subtitle =
+"Reviews for Robotic Vacuums"
+,
+x =
+"Stars"
+,
+y =
+"Overall Sentiment"
+)
+```
 
+```{r}
+bing_word_counts <- tokens_stemmed %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts
+```
 
 
 ###Afinn
