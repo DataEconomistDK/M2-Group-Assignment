@@ -128,6 +128,50 @@ str(tokens_clean)
 
 
 
+
+
+```{r}
+bigrams <- unnest_tokens(data_raw, bigram, reviews.text, token = "ngrams", n = 2)
+
+str(bigrams)
+```
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+
+
 ```{r}
 tokens_clean$word<-lemmatize_words(tokens_clean$word)
 #Lemmatazion
@@ -141,6 +185,8 @@ tokens_stemmed <- tokens_clean %>%
   mutate(word=wordStem(word))
 unique(tokens_stemmed$word)
 ```
+
+
 
 
 
