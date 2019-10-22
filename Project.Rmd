@@ -123,7 +123,7 @@ tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word"
 ```
 
 ```{r}
-tokens_stemmed %<>%
+tokens_stemmed = tokens_clean %<>%
   add_count(id, word, name = "nword") %>%
   add_count(id, name = "ntweet") %>%
   filter(nword > 1 & ntweet > 5) %>%
@@ -133,7 +133,6 @@ tokens_stemmed %<>%
 ```{r}
 tokens_stemmed <- tokens_stemmed %>% mutate(word = wordStem(word))
 ```
-
 
 ```{r}
 topwords <- tokens_stemmed %>% count(word, sort=TRUE)
@@ -160,6 +159,9 @@ topwords %>%
 wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, colors = brewer.pal(8,"Dark2"))
 ```
 ## TF-IDF
+- comment on not running a tf-idf
+
+
 
 ```{r}
 group_words = tokens_stemmed %>% count(name, word, sort=TRUE)
