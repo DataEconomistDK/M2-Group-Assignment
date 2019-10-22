@@ -164,7 +164,6 @@ Above we can see that the most common bigrams are now mostly product names such 
 bigrams_united <- bigrams_filtered %>% 
   unite(bigrams, word1, word2,sep = " ")
 
-bigrams_united
 ```
 
 
@@ -251,19 +250,27 @@ word_cors %>%
 ```
 
 
-
-
 ```{r}
-tokens_clean$word<-lemmatize_words(tokens_clean$word)
-#Lemmatazion
 tokens_clean %>% 
   count(word,sort =TRUE)
 options(max.print = 10)
 unique(tokens_clean$word)
+```
+
+
+```{r}
+#Lemmatazion
+tokens_lemma <- tokens_clean %>% 
+  mutate(word = lemmatize_words(word))
+
+unique(tokens_lemma$word)
+
+
 
 #Stemmed
 tokens_stemmed <- tokens_clean %>% 
-  mutate(word=wordStem(word))
+  mutate(word = wordStem(word))
+
 unique(tokens_stemmed$word)
 ```
 
@@ -293,14 +300,17 @@ tokens_clean %<>%
 
 
 ```{r}
-own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), lexicon = "OWN")
+own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
+                        lexicon = "OWN")
 ```
 
 
 
 
 ```{r}
-tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
+tokens_clean %<>% 
+  anti_join(stop_words %>% 
+              bind_rows(own_stopwords), by = "word") 
 ```
 
 
@@ -318,7 +328,8 @@ tokens_stemmed <- tokens_clean %<>%
 
 
 ```{r}
-tokens_stemmed <- tokens_stemmed %>% mutate(word = wordStem(word))
+tokens_stemmed <- tokens_stemmed %>% 
+  mutate(word = wordStem(word))
 ```
 
 
@@ -358,7 +369,8 @@ topwords %>%
 
 
 ```{r}
-wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, colors = brewer.pal(8,"Dark2"))
+wordcloud(topwords$word, topwords$n, random.order = FALSE, 
+          max.words = 50, colors = brewer.pal(8,"Dark2"))
 ```
 
 
@@ -387,21 +399,13 @@ group_by(sentiment) %>%
 top_n(10, n) %>%
 ungroup() %>%
 mutate(
-word2 = fct_reorder(word, n)
-)
+word2 = fct_reorder(word, n))
 
 ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
 geom_col(show.legend = FALSE) +
-facet_wrap(~ sentiment, scales =
-"free") +
+facet_wrap(~ sentiment, scales ="free") +
 coord_flip() +
-labs(
-title =
-"Sentiment Word Counts"
-,
-x =
-"Words"
-)
+labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
 ```{r}
@@ -423,6 +427,7 @@ mutate(overall_sentiment = positive - negative)
 
 ```{r, include=FALSE}
 
+<<<<<<< HEAD
 get_sentiments("afinn")
 
 sentiment_afinn <- tokens_stemmed %>%
@@ -435,6 +440,33 @@ sentiment_afinn <- tokens_stemmed %>%
 ```{r}
 sentiment_afinn$
 ```
+=======
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(
+word2 = fct_reorder(word, n))
+
+ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
+geom_col(show.legend = FALSE) +
+facet_wrap(~ sentiment, scales ="free") +
+coord_flip() +
+labs(title ="Sentiment Word Counts",x ="Words")
+```
+
+```{r}
+sentiment_analysis <- sentiment_nrc %>% filter(sentiment %in% c("anger"
+,"disgust", "fear", "negative", "sadness"))
+
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(word2 = fct_reorder(word, n))
+>>>>>>> 17580d77733542fa027ec49d51243b57dab68c65
 
 ```{r}
 ggplot(
@@ -443,6 +475,7 @@ aes(x = reviews.rating, y = sentiment, fill = as.factor(reviews.rating))
 ) +
 geom_col(show.legend = FALSE) +
 coord_flip() +
+<<<<<<< HEAD
 labs(
 title =
 "Overall Sentiment by Stars"
@@ -456,6 +489,9 @@ x =
 y =
 "Overall Sentiment"
 )
+=======
+labs(title ="Sentiment Word Counts",x ="Words")
+>>>>>>> 17580d77733542fa027ec49d51243b57dab68c65
 ```
 
 
