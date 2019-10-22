@@ -186,7 +186,7 @@ bigram_graph <- bigram_counts %>%
   filter(n > 15) %>% 
   graph_from_data_frame()
 
-bigram_graph
+
 
 a<- grid::arrow(type = "closed",length = unit(.15,"inches"))
 
@@ -201,7 +201,7 @@ ggraph(bigram_graph, layout = "fr") +
 
 ```{r}
 #Correlation bigrams
-bigram_section <- data_raw %>% 
+bigram_section <- data_clean %>% 
   unnest_tokens(word,reviews.text) %>% 
   filter(!word %in% stop_words$word)
 bigram_section
