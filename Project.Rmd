@@ -180,13 +180,18 @@ bigram_counts
 
 Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. 
 
+
+We want to recombine words by using 'tidyr' function 'unite'. This will be used to analyzing the bigrams.
+The purpose is to threat the bigram as a 'term in a document'. Therefor we can look at the tf_idf values
+of bigrams and visualize them.
+
 ```{r}
 bigrams_united <- bigrams_filtered %>% 
   unite(bigrams, word1, word2,sep = " ")
 
 ```
 
-
+Creating the tf_idf values for the bigram:
 
 ```{r}
 bigram_tf_idf <- bigrams_united %>%
@@ -197,12 +202,16 @@ bigram_tf_idf <- bigrams_united %>%
 bigram_tf_idf
 ```
 
+#### COMMENT ON THE TF_IDF #####
 
+The interesting thing is now to visualize the relationship between all words. To this we will use the
+package igraph. Before doing this we will need to create the graph from a data frame. Where we take a 
+data frame of edges with columns for 'from', 'to'. Which is equal to n.
 
 
 ```{r}
 bigram_graph <- bigram_counts %>% 
-  filter(n > 15) %>% 
+  filter(n > 15) %>%  #Sets the combination to atleast 15
   graph_from_data_frame()
 
 
@@ -216,6 +225,12 @@ ggraph(bigram_graph, layout = "fr") +
   geom_node_text(aes(label = name),vjust=1,hjust=1) + 
   theme_void()
 ```
+
+The plot above, show us some details about the structure of the text. We can for example see that such 
+thing as 'son' 'wife' and 'daugther' are connected with 'loves'.
+
+#Correlation bigrams
+
 
 
 ```{r}
@@ -261,7 +276,7 @@ word_cors %>%
   filter(correlation > .275) %>% 
   graph_from_data_frame() %>% 
   ggraph(layout="fr") +
-  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = TRUE) +
   geom_node_point(color = "pink",size=3) +
   geom_node_text(aes(label = name), repel = TRUE) +
   theme_void()
