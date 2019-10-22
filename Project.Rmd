@@ -69,10 +69,10 @@ pacman::p_load(knitr, # For knitr to html
                dbscan, # for density based clustering
                SnowballC,
                wordcloud,
-               textdata
+               textdata,
                wordcloud, 
                textstem, # for textstemming 
-               tidyr,
+               tidyr
                )
 
 # I set a seed for reproduciability
