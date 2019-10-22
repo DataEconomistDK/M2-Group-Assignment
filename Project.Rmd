@@ -205,10 +205,8 @@ bigram_tf_idf
 
 
 ```{r}
-bigrams_separated %>% 
-  filter(word1 == "not") %>% 
-  count(word1, word2, sort = TRUE)
-
+bigram_graph <- bigram_counts %>% 
+  
 ```
 
 
@@ -335,7 +333,6 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, color
 ```{r}
 sentiment_review = tokens_stemmed %>% get_sentiments("nrc")
 
-<<<<<<< HEAD
 sentiment_review %>% count(sentiment)
 ```
 
