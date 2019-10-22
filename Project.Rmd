@@ -126,44 +126,21 @@ str(tokens_clean)
 
 # Network analysis
 
-
-
-
-
+In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. These are now created. 
 
 ```{r}
+<<<<<<< HEAD
 bigrams <- data_raw %>%
   unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2)
 #Counting common bigrams
 bigrams %>% count(bigram, sort = TRUE)
-```
-
-
-```{r}
-pacman::p_load(tidyr)
-bigrams_separated <- bigrams %>% 
-  separate(bigram,c("word1","word2"),sep = " ")
-
-bigrams_filtered <- bigrams_separated %>% 
-  filter(!word1 %in% stop_words$word) %>% 
-  filter(!word2 %in% stop_words$word)
-
-#New bigram counts
-bigram_counts <- bigrams_filtered %>% 
-  count(word1, word2, sort = TRUE)
-
-bigram_counts
+=======
+bigrams <- unnest_tokens(data_raw, bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
+>>>>>>> 3d649aaa9ee52bf621d9df3891c883eb936d4447
 ```
 
 
 
-
-```{r}
-bigrams_united <- bigrams_filtered %>% 
-  unite(bigram, word1, word2, sep = " ")
-
-bigrams_united
-```
 
 
 
