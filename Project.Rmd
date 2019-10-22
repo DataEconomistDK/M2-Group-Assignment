@@ -197,27 +197,20 @@ topwords %>%
 wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, colors = brewer.pal(8,"Dark2"))
 ```
 ## TF-IDF
+- what is tf-idf
 - comment on not running a tf-idf
 
-
-
-```{r}
-group_words = tokens_stemmed %>% count(name, word, sort=TRUE)
-total_words = group_words %>% group_by(name) %>% summarize(total = sum(n)) 
-tokens_tfidf = left_join(group_words, total_words)
-```
+##XX
 
 ```{r}
-tokens_tfidf <- tokens_tfidf %>% bind_tf_idf(word, name, n)
-```
+a = tidy(tokens_stemmed)
 
-Now I'll remove the column total and arrange it by the highest tf-idf. 
-
-```{r}
-tokens_tfidf %>% select(-total) %>% arrange(desc(tf_idf))
 ```
 
 
+##LSA
+
+##LDA
 
 
 # Machine learning
