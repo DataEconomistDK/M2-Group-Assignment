@@ -69,7 +69,8 @@ pacman::p_load(knitr, # For knitr to html
                dbscan, # for density based clustering
                SnowballC,
                wordcloud, 
-               textstem # for textstemming 
+               textstem, # for textstemming 
+               tidyr
                )
 
 # I set a seed for reproduciability
@@ -131,21 +132,37 @@ str(tokens_clean)
 
 
 ```{r}
-bigrams <- unnest_tokens(data_raw, bigram, reviews.text, token = "ngrams", n = 2)
-
-str(bigrams)
+bigrams <- data_raw %>%
+  unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2)
+#Counting common bigrams
+bigrams %>% count(bigram, sort = TRUE)
 ```
 
 
 ```{r}
+pacman::p_load(tidyr)
+bigrams_separated <- bigrams %>% 
+  separate(bigram,c("word1","word2"),sep = " ")
 
+bigrams_filtered <- bigrams_separated %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word2 %in% stop_words$word)
+
+#New bigram counts
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+bigram_counts
 ```
 
 
 
 
 ```{r}
+bigrams_united <- bigrams_filtered %>% 
+  unite(bigram, word1, word2, sep = " ")
 
+bigrams_united
 ```
 
 
@@ -177,7 +194,7 @@ tokens_clean$word<-lemmatize_words(tokens_clean$word)
 #Lemmatazion
 tokens_clean %>% 
   count(word,sort =TRUE)
-options(max.print = 1)
+options(max.print = 10)
 unique(tokens_clean$word)
 
 #Stemmed
