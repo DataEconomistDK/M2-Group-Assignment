@@ -427,7 +427,6 @@ mutate(overall_sentiment = positive - negative)
 
 ```{r, include=FALSE}
 
-<<<<<<< HEAD
 get_sentiments("afinn")
 
 sentiment_afinn <- tokens_stemmed %>%
@@ -466,32 +465,17 @@ group_by(sentiment) %>%
 top_n(10, n) %>%
 ungroup() %>%
 mutate(word2 = fct_reorder(word, n))
->>>>>>> 17580d77733542fa027ec49d51243b57dab68c65
+
 
 ```{r}
-ggplot(
-sentiment_afinn,
-aes(x = reviews.rating, y = sentiment, fill = as.factor(reviews.rating))
-) +
+ggplot(sentiment_afinn,aes(x = reviews.rating, y = sentiment, 
+                           fill = as.factor(reviews.rating))) +
 geom_col(show.legend = FALSE) +
 coord_flip() +
-<<<<<<< HEAD
-labs(
-title =
-"Overall Sentiment by Stars"
-,
-subtitle =
-"Reviews for Robotic Vacuums"
-,
-x =
-"Stars"
-,
-y =
-"Overall Sentiment"
-)
-=======
+labs(title ="Overall Sentiment by Stars",subtitle ="Reviews for Robotic Vacuums",
+     x ="Stars",y ="Overall Sentiment")
+
 labs(title ="Sentiment Word Counts",x ="Words")
->>>>>>> 17580d77733542fa027ec49d51243b57dab68c65
 ```
 
 
