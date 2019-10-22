@@ -68,8 +68,14 @@ pacman::p_load(knitr, # For knitr to html
                uwot, # for UMAP
                dbscan, # for density based clustering
                SnowballC,
+<<<<<<< HEAD
                wordcloud,
                textdata
+=======
+               wordcloud, 
+               textstem, # for textstemming 
+               tidyr
+>>>>>>> 9efb030ef3cb127cb466ec28b946317519c1aefb
                )
 
 # I set a seed for reproduciability
@@ -107,6 +113,9 @@ str(tokens_raw)
 ```
 155.258 tokens. 
 
+
+
+
 Cleaning numbers and weird characters. 
 ```{r}
 tokens_clean <- tokens_raw %>%
@@ -121,14 +130,97 @@ str(tokens_clean)
 
 
 # Network analysis
-```{r}
-pacman::p_load(textstem)
 
+In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. These are now created. Then the most common bigrams are displayed. 
+
+
+
+```{r}
+bigrams <- data_raw %>%
+  unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
+
+#Counting common bigrams
+bigrams %>% count(bigram, sort = TRUE)
+
+```
+
+Notice the most common bigrams are: ....? These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new count to see the most bigrams. 
+
+```{r}
+bigrams$bigram[1:2]
+```
+
+Remember that each bigram overlap as can be seen from above so that the first token is "the display" and the second is "display is". 
+
+
+```{r}
+bigrams_separated <- bigrams %>% 
+  separate(bigram,c("word1","word2"),sep = " ")
+
+bigrams_filtered <- bigrams_separated %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word2 %in% stop_words$word)
+
+#New bigram counts
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+bigram_counts
+```
+
+The most common bigrams are now product names such as ..., as seen from above. We now combine the 2 columns again into a single column with the bigram. 
+
+
+```{r}
+bigrams_united <- bigrams_filtered %>% 
+  unite(bigrams, word1, word2,sep = " ")
+
+bigrams_united
+```
+
+
+
+
+
+```{r}
+#Trigram
+data_raw  %>% 
+  unnest_tokens(trigram, reviews.text, token = "ngrams",n=3) %>% 
+  separate(trigram, c("word1","word2","word3"),sep = " ") %>% 
+  filter(!word1 %in% stop_words$word,
+         !word2 %in% stop_words$word,
+         !word3 %in% stop_words$word) %>% 
+  count(word1,word2,word3, sort = TRUE)
+```
+
+
+
+```{r}
+bigram_tf_idf <- bigrams_united %>%
+  count(reviews.title, bigrams) %>%
+  bind_tf_idf(bigrams, reviews.title, n) %>%
+  arrange(desc(tf_idf))
+
+bigram_tf_idf
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+
+
+```{r}
 tokens_clean$word<-lemmatize_words(tokens_clean$word)
 #Lemmatazion
 tokens_clean %>% 
   count(word,sort =TRUE)
-options(max.print = 1)
+options(max.print = 10)
 unique(tokens_clean$word)
 
 #Stemmed
@@ -140,10 +232,20 @@ unique(tokens_stemmed$word)
 
 
 
+
+
+
+
+
+
 # NLP
 ```{r}
 tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 ```
+
+
+
+
 
 ```{r}
 tokens_clean %<>%
@@ -157,9 +259,14 @@ own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), lexicon
 ```
 
 
+
+
 ```{r}
 tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
 ```
+
+
+
 
 ```{r}
 tokens_stemmed <- tokens_clean %<>%
@@ -169,13 +276,23 @@ tokens_stemmed <- tokens_clean %<>%
     select(-nword, -ntweet)
 ```
 
+
+
+
 ```{r}
 tokens_stemmed <- tokens_stemmed %>% mutate(word = wordStem(word))
 ```
 
+
+
+
 ```{r}
 topwords <- tokens_stemmed %>% count(word, sort=TRUE)
 ```
+
+
+
+
 
 ```{r}
 topwords %>%
@@ -188,15 +305,27 @@ topwords %>%
        y = "Top Words")
 ```
 
+
+
+
+
 ```{r}
 topwords %>%
   ggplot(aes(x = n)) + 
   geom_histogram()
 ```
 
+
+
+
+
 ```{r}
 wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, colors = brewer.pal(8,"Dark2"))
 ```
+
+
+
+
 ## TF-IDF
 - what is tf-idf
 - comment on not running a tf-idf
@@ -206,9 +335,30 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, color
 ```{r}
 sentiment_review = tokens_stemmed %>% get_sentiments("nrc")
 
+<<<<<<< HEAD
 sentiment_review %>% count(sentiment)
 ```
 
+=======
+
+
+
+```{r}
+tokens_tfidf <- tokens_tfidf %>% bind_tf_idf(word, name, n)
+```
+
+
+
+
+Now I'll remove the column total and arrange it by the highest tf-idf. 
+
+
+
+
+```{r}
+tokens_tfidf %>% select(-total) %>% arrange(desc(tf_idf))
+```
+>>>>>>> 9efb030ef3cb127cb466ec28b946317519c1aefb
 
 ##LSA
 
