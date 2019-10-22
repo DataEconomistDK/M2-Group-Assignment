@@ -68,6 +68,8 @@ pacman::p_load(knitr, # For knitr to html
                uwot, # for UMAP
                dbscan, # for density based clustering
                SnowballC,
+               wordcloud,
+               textdata
                wordcloud, 
                textstem, # for textstemming 
                tidyr,
@@ -134,18 +136,19 @@ In this assignment we want to use network analysis to gain new insights into how
 bigrams <- data_raw %>%
   unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
 
-#Counting common bigrams
-bigrams %>% count(bigram, sort = TRUE)
-
-```
-
-Notice the most common bigrams are: ....? These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new count to see the most bigrams. 
-
-```{r}
 bigrams$bigram[1:2]
 ```
 
-Remember that each bigram overlap as can be seen from above so that the first token is "the display" and the second is "display is". 
+Remember that each bigram overlap, as can be seen from above, so that the first token is "the display" and the second is "display is". 
+
+```{r}
+#Counting common bigrams
+bigrams %>% 
+  count(bigram, sort = TRUE)
+
+```
+
+Notice the most common bigrams are: "for my", "easy to", "to use", "it is". These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new count to see the most bigrams. 
 
 
 ```{r}
@@ -163,8 +166,7 @@ bigram_counts <- bigrams_filtered %>%
 bigram_counts
 ```
 
-The most common bigrams are now product names such as ..., as seen from above. We now combine the 2 columns again into a single column with the bigram. 
-
+Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. 
 
 ```{r}
 bigrams_united <- bigrams_filtered %>% 
@@ -267,7 +269,7 @@ tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word"
 
 
 ```{r}
-tokens_stemmed = tokens_clean %<>%
+tokens_stemmed <- tokens_clean %<>%
   add_count(id, word, name = "nword") %>%
   add_count(id, name = "ntweet") %>%
   filter(nword > 1 & ntweet > 5) %>%
@@ -325,16 +327,19 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, color
 
 
 ## TF-IDF
+- what is tf-idf
 - comment on not running a tf-idf
 
-
+##Sentiment analysis
 
 ```{r}
-group_words = tokens_stemmed %>% count(name, word, sort=TRUE)
-total_words = group_words %>% group_by(name) %>% summarize(total = sum(n)) 
-tokens_tfidf = left_join(group_words, total_words)
+sentiment_review = tokens_stemmed %>% get_sentiments("nrc")
+
+<<<<<<< HEAD
+sentiment_review %>% count(sentiment)
 ```
 
+=======
 
 
 
@@ -353,8 +358,11 @@ Now I'll remove the column total and arrange it by the highest tf-idf.
 ```{r}
 tokens_tfidf %>% select(-total) %>% arrange(desc(tf_idf))
 ```
+>>>>>>> 9efb030ef3cb127cb466ec28b946317519c1aefb
 
+##LSA
 
+##LDA
 
 
 # Machine learning
