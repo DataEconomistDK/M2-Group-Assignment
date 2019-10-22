@@ -164,7 +164,6 @@ Above we can see that the most common bigrams are now mostly product names such 
 bigrams_united <- bigrams_filtered %>% 
   unite(bigrams, word1, word2,sep = " ")
 
-bigrams_united
 ```
 
 
@@ -251,19 +250,27 @@ word_cors %>%
 ```
 
 
-
-
 ```{r}
-tokens_clean$word<-lemmatize_words(tokens_clean$word)
-#Lemmatazion
 tokens_clean %>% 
   count(word,sort =TRUE)
 options(max.print = 10)
 unique(tokens_clean$word)
+```
+
+
+```{r}
+#Lemmatazion
+tokens_lemma <- tokens_clean %>% 
+  mutate(word = lemmatize_words(word))
+
+unique(tokens_lemma$word)
+
+
 
 #Stemmed
 tokens_stemmed <- tokens_clean %>% 
-  mutate(word=wordStem(word))
+  mutate(word = wordStem(word))
+
 unique(tokens_stemmed$word)
 ```
 
