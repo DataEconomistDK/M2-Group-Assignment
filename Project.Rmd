@@ -72,7 +72,8 @@ pacman::p_load(knitr, # For knitr to html
                textdata,
                wordcloud, 
                textstem, # for textstemming 
-               tidyr
+               tidyr,
+               widyr
                )
 
 # I set a seed for reproduciability
@@ -98,31 +99,21 @@ data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv"
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
   mutate(id = row_number())
 
-str(data_raw)
+data_clean <- data_raw %>% 
+  mutate(reviews.text = reviews.text %>% str_remove_all("[[:punct:]]")) %>% 
+  mutate(reviews.text = reviews.text %>% str_remove_all("[[:digit:]]")) %>% 
+  mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
 
 
 
 ```{r}
-tokens_raw <- unnest_tokens(data_raw, word, reviews.text)
-str(tokens_raw)
+tokens_raw <- unnest_tokens(data_clean, word, reviews.text)
+tokens_clean <- tokens_raw %>%
+  filter(str_length(word) > 0)
 ```
 155.258 tokens. 
-
-
-
-
-Cleaning numbers and weird characters. 
-```{r}
-tokens_clean <- tokens_raw %>%
-  mutate(word = word %>% str_remove_all("[^[:alnum:]]")) %>% 
-  mutate(word = word %>% str_remove_all("[[:digit:]]")) %>% 
-  mutate(word = word %>% str_remove_all("[^a-zA-Z0-9]")) %>%
-  filter(str_length(word) > 0)
-
-str(tokens_clean)
-```
 
 
 
@@ -133,7 +124,7 @@ In this assignment we want to use network analysis to gain new insights into how
 
 
 ```{r}
-bigrams <- data_raw %>%
+bigrams <- data_clean %>%
   unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
 
 bigrams$bigram[1:2]
@@ -177,21 +168,6 @@ bigrams_united
 
 
 
-
-
-```{r}
-#Trigram
-data_raw  %>% 
-  unnest_tokens(trigram, reviews.text, token = "ngrams",n=3) %>% 
-  separate(trigram, c("word1","word2","word3"),sep = " ") %>% 
-  filter(!word1 %in% stop_words$word,
-         !word2 %in% stop_words$word,
-         !word3 %in% stop_words$word) %>% 
-  count(word1,word2,word3, sort = TRUE)
-```
-
-
-
 ```{r}
 bigram_tf_idf <- bigrams_united %>%
   count(reviews.title, bigrams) %>%
@@ -221,12 +197,21 @@ a<- grid::arrow(type = "closed",length = unit(.15,"inches"))
 ggraph(bigram_graph, layout = "fr") + 
   geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
                  arrow = a, end_cap = circle(.05,'inches'))+
-  geom_node_point(color = "blue", size = 3) + 
+  geom_node_point(color = "pink", size = 3) + 
   geom_node_text(aes(label = name),vjust=1,hjust=1) + 
   theme_void()
 ```
 
 
+```{r}
+#Correlation bigrams
+bigram_section <- data_raw %>% 
+  unnest_tokens(word,reviews.text) %>% 
+  filter(!word %in% stop_words$word)
+bigram_section
+
+
+```
 
 
 
