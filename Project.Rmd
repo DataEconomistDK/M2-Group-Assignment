@@ -125,15 +125,10 @@ str(tokens_clean)
 
 # Network analysis
 
-
-
-
-
+In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. These are now created. 
 
 ```{r}
-bigrams <- unnest_tokens(data_raw, bigram, reviews.text, token = "ngrams", n = 2)
-
-str(bigrams)
+bigrams <- unnest_tokens(data_raw, bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
 ```
 
 
