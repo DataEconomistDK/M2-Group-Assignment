@@ -90,7 +90,7 @@ Cleaning numbers and weird characters.
 tokens_clean <- tokens_raw %>%
   mutate(word = word %>% str_remove_all("[^[:alnum:]]")) %>% 
   mutate(word = word %>% str_remove_all("[[:digit:]]")) %>% 
-  filter(str_length(word) > 0)
+  filter(str_length(word) > 1)
 
 str(tokens_clean)
 ```
@@ -98,7 +98,6 @@ str(tokens_clean)
 
 
 # Network analysis
-
 
 
 
