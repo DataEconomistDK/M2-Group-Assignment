@@ -418,68 +418,6 @@ mutate(overall_sentiment = positive - negative)
 
 
 
-###nrc
-
-```{r}
-sentiment_nrc <- tokens_stemmed %>% inner_join(get_sentiments("nrc"))
-sentiment_nrc %>% count(sentiment)
-```
-
-
-```{r}
-sentiment_analysis <- sentiment_nrc %>% filter(sentiment %in% c("anticipation", "joy", "positive", "surprise", "trust"))
-
-word_counts <- sentiment_analysis %>%
-count(word, sentiment) %>%
-group_by(sentiment) %>%
-top_n(10, n) %>%
-ungroup() %>%
-mutate(
-word2 = fct_reorder(word, n)
-)
-
-ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
-geom_col(show.legend = FALSE) +
-facet_wrap(~ sentiment, scales =
-"free") +
-coord_flip() +
-labs(
-title =
-"Sentiment Word Counts"
-,
-x =
-"Words"
-)
-```
-
-```{r}
-sentiment_analysis <- sentiment_nrc %>% filter(sentiment %in% c("anger"
-,"disgust", "fear", "negative", "sadness"))
-
-word_counts <- sentiment_analysis %>%
-count(word, sentiment) %>%
-group_by(sentiment) %>%
-top_n(10, n) %>%
-ungroup() %>%
-mutate(
-word2 = fct_reorder(word, n)
-)
-
-ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
-geom_col(show.legend = FALSE) +
-facet_wrap(~ sentiment, scales =
-"free") +
-coord_flip() +
-labs(
-title =
-"Sentiment Word Counts"
-,
-x =
-"Words"
-)
-```
-
-
 
 ###Afinn
 
@@ -492,7 +430,9 @@ sentiment_afinn <- tokens_stemmed %>%
   group_by(reviews.rating) %>%
   summarize(sentiment = sum(value)) %>%
   arrange(sentiment)
+```
 
+```{r}
 sentiment_afinn
 ```
 
