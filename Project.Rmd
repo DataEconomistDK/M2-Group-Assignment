@@ -70,7 +70,7 @@ pacman::p_load(knitr, # For knitr to html
                SnowballC,
                wordcloud, 
                textstem, # for textstemming 
-               tidyr
+               tidyr,
                )
 
 # I set a seed for reproduciability
@@ -203,6 +203,9 @@ bigram_tf_idf
 
 
 ```{r}
+bigrams_separated %>% 
+  filter(word1 == "not") %>% 
+  count(word1, word2, sort = TRUE)
 
 ```
 
