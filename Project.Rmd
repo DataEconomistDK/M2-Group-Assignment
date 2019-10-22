@@ -99,6 +99,24 @@ str(tokens_clean)
 
 
 # Network analysis
+```{r}
+pacman::p_load(textstem)
+
+tokens_clean$word<-lemmatize_words(tokens_clean$word)
+#Lemmatazion
+tokens_clean %>% 
+  count(word,sort =TRUE)
+options(max.print = 1)
+unique(tokens_clean$word)
+
+#Stemmed
+tokens_stemmed <- tokens_clean %>% 
+  mutate(word=wordStem(word))
+unique(tokens_stemmed$word)
+```
+
+
+
 
 # NLP
 ```{r}
