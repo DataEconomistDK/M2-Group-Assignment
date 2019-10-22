@@ -126,7 +126,7 @@ str(tokens_clean)
 
 # Network analysis
 
-In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. These are now created. 
+In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. These are now created. Then the most common bigrams are displayed. 
 
 
 
@@ -139,7 +139,13 @@ bigrams %>% count(bigram, sort = TRUE)
 
 ```
 
+Notice the most common bigrams are: ....? These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new count to see the most bigrams. 
 
+```{r}
+bigrams$bigram[1:2]
+```
+
+Remember that each bigram overlap as can be seen from above so that the first token is "the display" and the second is "display is". 
 
 
 ```{r}
@@ -157,7 +163,7 @@ bigram_counts <- bigrams_filtered %>%
 bigram_counts
 ```
 
-
+The most common bigrams are now product names such as ..., as seen from above. We now combine the 2 columns again into a single column with the bigram. 
 
 
 ```{r}
