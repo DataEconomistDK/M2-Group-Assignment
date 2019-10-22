@@ -259,6 +259,9 @@ unique(tokens_clean$word)
 
 
 ```{r}
+unique(tokens_clean$word)
+  
+
 #Lemmatazion
 tokens_lemma <- tokens_clean %>% 
   mutate(word = lemmatize_words(word))
