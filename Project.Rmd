@@ -293,14 +293,17 @@ tokens_clean %<>%
 
 
 ```{r}
-own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), lexicon = "OWN")
+own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
+                        lexicon = "OWN")
 ```
 
 
 
 
 ```{r}
-tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
+tokens_clean %<>% 
+  anti_join(stop_words %>% 
+              bind_rows(own_stopwords), by = "word") 
 ```
 
 
@@ -318,7 +321,8 @@ tokens_stemmed <- tokens_clean %<>%
 
 
 ```{r}
-tokens_stemmed <- tokens_stemmed %>% mutate(word = wordStem(word))
+tokens_stemmed <- tokens_stemmed %>% 
+  mutate(word = wordStem(word))
 ```
 
 
@@ -358,7 +362,8 @@ topwords %>%
 
 
 ```{r}
-wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, colors = brewer.pal(8,"Dark2"))
+wordcloud(topwords$word, topwords$n, random.order = FALSE, 
+          max.words = 50, colors = brewer.pal(8,"Dark2"))
 ```
 
 
@@ -387,21 +392,13 @@ group_by(sentiment) %>%
 top_n(10, n) %>%
 ungroup() %>%
 mutate(
-word2 = fct_reorder(word, n)
-)
+word2 = fct_reorder(word, n))
 
 ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
 geom_col(show.legend = FALSE) +
-facet_wrap(~ sentiment, scales =
-"free") +
+facet_wrap(~ sentiment, scales ="free") +
 coord_flip() +
-labs(
-title =
-"Sentiment Word Counts"
-,
-x =
-"Words"
-)
+labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
 ```{r}
@@ -435,21 +432,13 @@ group_by(sentiment) %>%
 top_n(10, n) %>%
 ungroup() %>%
 mutate(
-word2 = fct_reorder(word, n)
-)
+word2 = fct_reorder(word, n))
 
 ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
 geom_col(show.legend = FALSE) +
-facet_wrap(~ sentiment, scales =
-"free") +
+facet_wrap(~ sentiment, scales ="free") +
 coord_flip() +
-labs(
-title =
-"Sentiment Word Counts"
-,
-x =
-"Words"
-)
+labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
 ```{r}
@@ -461,22 +450,14 @@ count(word, sentiment) %>%
 group_by(sentiment) %>%
 top_n(10, n) %>%
 ungroup() %>%
-mutate(
-word2 = fct_reorder(word, n)
-)
+mutate(word2 = fct_reorder(word, n))
 
 ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
 geom_col(show.legend = FALSE) +
 facet_wrap(~ sentiment, scales =
 "free") +
 coord_flip() +
-labs(
-title =
-"Sentiment Word Counts"
-,
-x =
-"Words"
-)
+labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
 
