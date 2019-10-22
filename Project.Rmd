@@ -73,7 +73,7 @@ set.seed(123) # Have to be set every time a rng proces is being made.
 ## Loading and filtering data
 
 Now we load the data. 
-```{r}
+```{r, include=FALSE}
 data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
   mutate(id = row_number())
@@ -99,6 +99,8 @@ str(tokens_clean)
 
 
 # Network analysis
+
+# NLP
 ```{r}
 tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 ```
@@ -110,12 +112,28 @@ tokens_clean %<>%
 
 
 ```{r}
-own_stopwords <- tibble(word= c("im", "ive"), lexicon = "OWN")
+own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), lexicon = "OWN")
 ```
 
 
-# NLP
+```{r}
+tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
+```
 
+```{r}
+topword <- tokens_clean %>% count(word, sort=TRUE) %>% head(100)
+```
+
+```{r}
+topwords %>%
+  top_n(20, n) %>%
+  ggplot(aes(x = word %>% fct_reorder(n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Word Counts", 
+       x = "Frequency", 
+       y = "Top Words")
+```
 
 
 # Machine learning
