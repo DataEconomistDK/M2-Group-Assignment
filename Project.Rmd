@@ -68,9 +68,14 @@ pacman::p_load(knitr, # For knitr to html
                uwot, # for UMAP
                dbscan, # for density based clustering
                SnowballC,
+<<<<<<< HEAD
+               wordcloud,
+               textdata
+=======
                wordcloud, 
                textstem, # for textstemming 
                tidyr
+>>>>>>> 9efb030ef3cb127cb466ec28b946317519c1aefb
                )
 
 # I set a seed for reproduciability
@@ -264,7 +269,7 @@ tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word"
 
 
 ```{r}
-tokens_stemmed = tokens_clean %<>%
+tokens_stemmed <- tokens_clean %<>%
   add_count(id, word, name = "nword") %>%
   add_count(id, name = "ntweet") %>%
   filter(nword > 1 & ntweet > 5) %>%
@@ -322,16 +327,19 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, color
 
 
 ## TF-IDF
+- what is tf-idf
 - comment on not running a tf-idf
 
-
+##Sentiment analysis
 
 ```{r}
-group_words = tokens_stemmed %>% count(name, word, sort=TRUE)
-total_words = group_words %>% group_by(name) %>% summarize(total = sum(n)) 
-tokens_tfidf = left_join(group_words, total_words)
+sentiment_review = tokens_stemmed %>% get_sentiments("nrc")
+
+<<<<<<< HEAD
+sentiment_review %>% count(sentiment)
 ```
 
+=======
 
 
 
@@ -350,8 +358,11 @@ Now I'll remove the column total and arrange it by the highest tf-idf.
 ```{r}
 tokens_tfidf %>% select(-total) %>% arrange(desc(tf_idf))
 ```
+>>>>>>> 9efb030ef3cb127cb466ec28b946317519c1aefb
 
+##LSA
 
+##LDA
 
 
 # Machine learning
