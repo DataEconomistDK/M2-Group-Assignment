@@ -433,9 +433,30 @@ sentiment_afinn <- tokens_stemmed %>%
 ```
 
 ```{r}
-sentiment_afinn
+sentiment_afinn$
 ```
 
+```{r}
+ggplot(
+sentiment_afinn,
+aes(x = reviews.rating, y = sentiment, fill = as.factor(reviews.rating))
+) +
+geom_col(show.legend = FALSE) +
+coord_flip() +
+labs(
+title =
+"Overall Sentiment by Stars"
+,
+subtitle =
+"Reviews for Robotic Vacuums"
+,
+x =
+"Stars"
+,
+y =
+"Overall Sentiment"
+)
+```
 
 
 ##LSA
