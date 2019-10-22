@@ -72,7 +72,8 @@ pacman::p_load(knitr, # For knitr to html
                textdata,
                wordcloud, 
                textstem, # for textstemming 
-               tidyr
+               tidyr,
+               widyr
                )
 
 # I set a seed for reproduciability
@@ -212,6 +213,15 @@ ggraph(bigram_graph, layout = "fr") +
 ```
 
 
+```{r}
+#Correlation bigrams
+bigram_section <- data_raw %>% 
+  unnest_tokens(word,reviews.text) %>% 
+  filter(!word %in% stop_words$word)
+bigram_section
+
+
+```
 
 
 
