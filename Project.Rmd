@@ -94,6 +94,7 @@ Now we load the data we downloaded from kaggle. From this file we select the fol
 
 - reviews.text: The review text written by the customer. 
 
+The data is cleaned by removing punctuations, numbers and changing all strings to lower case in the review text. 
 ```{r}
 data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
@@ -105,15 +106,15 @@ data_clean <- data_raw %>%
   mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
-
+We here want to primarily work with tidy text, where there is one token per row. This is now created below. 
 
 
 ```{r}
 tokens_raw <- unnest_tokens(data_clean, word, reviews.text)
-tokens_clean <- tokens_raw %>%
-  filter(str_length(word) > 0)
+tokens_clean <- tokens_raw # extra filtering at some point? 
+
 ```
-155.258 tokens. 
+We now have 153.085 tokens, in their each seperate rows. 
 
 
 
