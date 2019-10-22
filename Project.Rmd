@@ -68,13 +68,16 @@ pacman::p_load(knitr, # For knitr to html
                uwot, # for UMAP
                dbscan, # for density based clustering
                SnowballC,
-               wordcloud,
                textdata,
                wordcloud, 
                textstem, # for textstemming 
                tidyr,
                widyr,
-               reshape2
+               reshape2,
+               quanteda,
+               uwot,
+               dbscan,
+               plotly
                )
 
 # I set a seed for reproduciability
@@ -483,6 +486,46 @@ labs(title ="Sentiment Word Counts",x ="Words")
 
 
 ##LSA
+```{r}
+#Document-feature-matrix
+data_dfm = tokens_stemmed %>% count(id, word) %>% cast_dfm(document = id, term = word, value = n)
+data_dfm
+```
+
+```{r, include=FALSE}
+data_dfm = data_dfm %>% textmodel_lsa(nd = 5)
+```
+
+```{r}
+data_lsa_loading <- data_dfm$docs %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "id") %>% 
+  as_tibble()
+```
+
+```{r, include=FALSE}
+data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("id"), 
+                       n_neighbors = 15, metric = "cosine", min_dist = 0.01, scale = TRUE,
+                       verbose = TRUE, n_threads = 8) 
+```
+```{r}
+data_lsa_umap %<>% as.data.frame()
+```
+
+```{r}
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 50)
+```
+
+
+```{r}
+x = data_lsa_umap %>% 
+  bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
+            prob = data_lsa_hdbscan$membership_prob) %>%
+  ggplot(aes(x = V1, y = V2, col = cluster)) + 
+  geom_point(aes(alpha = prob), shape = 21) 
+
+ggplotly(x)
+```
 
 
 
