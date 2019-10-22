@@ -187,11 +187,6 @@ bigram_graph <- bigram_counts %>%
 
 bigram_graph
 
-ggraph(bigram_graph,layout = "fr") +
-  geom_edge_link() +
-  geom_node_point() +
-  geom_node_text(aes(label = name),vjust =1, hjust=1)
-
 a<- grid::arrow(type = "closed",length = unit(.15,"inches"))
 
 ggraph(bigram_graph, layout = "fr") + 
@@ -245,7 +240,7 @@ word_cors %>%
 
 ```{r}
 word_cors %>% 
-  filter(correlation > .3) %>% 
+  filter(correlation > .275) %>% 
   graph_from_data_frame() %>% 
   ggraph(layout="fr") +
   geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
