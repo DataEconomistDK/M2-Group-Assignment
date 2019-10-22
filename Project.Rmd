@@ -287,7 +287,7 @@ tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word"
 tokens_stemmed <- tokens_clean %<>%
   add_count(id, word, name = "nword") %>%
   add_count(id, name = "ntweet") %>%
-  filter(nword > 1 & ntweet > 5) %>%
+  filter(nword > 1 & ntweet > 1) %>%
     select(-nword, -ntweet)
 ```
 
@@ -347,13 +347,151 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, color
 
 ##Sentiment analysis
 
-```{r}
-sentiment_nrc <- tokens_stemmed %>% inner_join(get_sentiments("bing"))
+###Bing
 
+```{r}
+sentiment_bing <- tokens_stemmed %>% inner_join(get_sentiments("bing"))
+sentiment_bing %>% count(sentiment)
+```
+
+```{r}
+sentiment_analysis <- sentiment_bing %>% filter(sentiment %in% c("positive"
+, "negative"))
+
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(
+word2 = fct_reorder(word, n)
+)
+
+ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
+geom_col(show.legend = FALSE) +
+facet_wrap(~ sentiment, scales =
+"free") +
+coord_flip() +
+labs(
+title =
+"Sentiment Word Counts"
+,
+x =
+"Words"
+)
+```
+
+```{r}
+tokens_stemmed %>% inner_join(get_sentiments("bing")) %>% count(reviews.rating, sentiment)
+```
+
+```{r}
+tokens_stemmed %>%
+inner_join(get_sentiments("bing")) %>%
+count(reviews.rating, sentiment) %>%
+spread(sentiment, n) %>%
+mutate(overall_sentiment = positive - negative)
+```
+
+
+
+###nrc
+
+```{r}
+sentiment_nrc <- tokens_stemmed %>% inner_join(get_sentiments("nrc"))
 sentiment_nrc %>% count(sentiment)
 ```
 
 
+```{r}
+sentiment_analysis <- sentiment_nrc %>% filter(sentiment %in% c("anticipation", "joy", "positive", "surprise", "trust"))
+
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(
+word2 = fct_reorder(word, n)
+)
+
+ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
+geom_col(show.legend = FALSE) +
+facet_wrap(~ sentiment, scales =
+"free") +
+coord_flip() +
+labs(
+title =
+"Sentiment Word Counts"
+,
+x =
+"Words"
+)
+```
+
+```{r}
+sentiment_analysis <- sentiment_nrc %>% filter(sentiment %in% c("anger"
+,"disgust", "fear", "negative", "sadness"))
+
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(
+word2 = fct_reorder(word, n)
+)
+
+ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
+geom_col(show.legend = FALSE) +
+facet_wrap(~ sentiment, scales =
+"free") +
+coord_flip() +
+labs(
+title =
+"Sentiment Word Counts"
+,
+x =
+"Words"
+)
+```
+
+###Afinn
+
+```{r}
+
+get_sentiments("afinn")
+
+sentiment_afinn <- tokens_stemmed %>% inner_join(get_sentiments("afinn"))
+sentiment_afinn %>% count(sentiment)
+```
+
+```{r}
+sentiment_analysis <- sentiment_bing %>% filter(sentiment %in% c("positive"
+, "negative"))
+
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(
+word2 = fct_reorder(word, n)
+)
+
+ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
+geom_col(show.legend = FALSE) +
+facet_wrap(~ sentiment, scales =
+"free") +
+coord_flip() +
+labs(
+title =
+"Sentiment Word Counts"
+,
+x =
+"Words"
+)
+```
 
 ##LSA
 
