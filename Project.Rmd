@@ -168,7 +168,7 @@ The most common bigrams are now product names such as ..., as seen from above. W
 
 ```{r}
 bigrams_united <- bigrams_filtered %>% 
-  unite(bigram, word1, word2, sep = " ")
+  unite(bigrams, word1, word2,sep = " ")
 
 bigrams_united
 ```
@@ -178,7 +178,14 @@ bigrams_united
 
 
 ```{r}
-
+#Trigram
+data_raw  %>% 
+  unnest_tokens(trigram, reviews.text, token = "ngrams",n=3) %>% 
+  separate(trigram, c("word1","word2","word3"),sep = " ") %>% 
+  filter(!word1 %in% stop_words$word,
+         !word2 %in% stop_words$word,
+         !word3 %in% stop_words$word) %>% 
+  count(word1,word2,word3, sort = TRUE)
 ```
 
 
