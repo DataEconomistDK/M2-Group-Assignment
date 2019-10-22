@@ -489,6 +489,81 @@ labs(title ="Sentiment Word Counts",x ="Words")
 
 ##LDA
 
+```{r}
+pacman::p_load(lda,
+               topicmodels)
+```
+
+
+
+```{r}
+data_dtm <- tokens_stemmed %>%
+  count(id, word) %>%
+  cast_dtm(document = id, term = word, value = n, weighting = tm::weightTf)
+
+data_dtm
+```
+
+
+
+```{r}
+data_dtm %>% removeSparseTerms(sparse = .99)
+```
+
+```{r}
+data_dtm %>% removeSparseTerms(sparse = .999)
+```
+
+```{r}
+data_dtm %>% removeSparseTerms(sparse = .9999)
+```
+
+```{r}
+data_lda <- data_dtm %>%
+  LDA(k = 5, method = "Gibbs",
+      control = list(seed = 1337))
+```
+
+
+```{r}
+lda_beta <- data_lda %>%
+  tidy(matrix = "beta") %>%
+  group_by(topic) %>%
+  arrange(topic, desc(beta)) %>%
+  slice(1:10) %>%
+  ungroup()
+
+lda_beta %>% head()
+```
+
+
+```{r}
+lda_beta %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  group_by(topic, term) %>%
+  arrange(desc(beta)) %>%
+  ungroup() %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(title = "Top 10 terms in each LDA topic",
+       x = NULL, y = expression(beta)) +
+  facet_wrap(~ topic, ncol = 2, scales = "free")
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
 
 # Machine learning
 
