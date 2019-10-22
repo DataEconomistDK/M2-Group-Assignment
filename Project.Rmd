@@ -17,15 +17,18 @@ This project is made to be read in html, so open the html file in your preferred
 
 Link for google colab: 
 
-Link for github: 
+Link for github: https://github.com/DataEconomistDK/M2-Group-Assignment 
 
-R-rules:
+R-rules: (delete before handin)
 Data may not be overwritten, but may always be given new meaningfull names. data_raw, data_tidy ect. 
 Always lower case letters. 
 Inline code comments are only for technical use ect. All other explanation should be text. 
 We load all packages in the top. 
 We write in document without any branches. 
 
+In this project we will work with a dataset of 5.000 consumer reviews for a few Amazon electronic products like f. ex. Kindle. Data is collected between September 2017 and October 2018. This is a sample taken from Kaggle which is a part of a much bigger dataset available trough Datafiniti. The data can be collected from this link: https://www.kaggle.com/datafiniti/consumer-reviews-of-amazon-products?fbclid=IwAR1o_blPfHeBPmnUzAOW7Ct24L7fhbI3OGcbfaVgaDZENhVXwaCP4godKvQ#Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv
+
+Note there is 3 available dataset on kaggle, but the file used here is called "Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products". The file is downloaded as is, and imported further below. 
 
 ## Loading packages
 
@@ -63,7 +66,9 @@ pacman::p_load(knitr, # For knitr to html
                tm, # text mining library
                quanteda, # for LSA (latent semantic analysis)
                uwot, # for UMAP
-               dbscan# for density based clustering
+               dbscan, # for density based clustering
+               SnowballC,
+               wordcloud
                )
 
 # I set a seed for reproduciability
@@ -72,12 +77,28 @@ set.seed(123) # Have to be set every time a rng proces is being made.
 
 ## Loading and filtering data
 
-Now we load the data. 
-```{r, include=FALSE}
+Now we load the data we downloaded from kaggle. From this file we select the following variables: 
+
+- id: An id number given to each review created by us corrensponding to the row number of the raw data. 
+
+- name: The full name of the product
+
+- reviews.rating: The rating of the product on a scale from 1-5. 
+
+- reviews.title: The title of the review, given by the customer. 
+
+- reviews.text: The review text written by the customer. 
+
+```{r}
 data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
   mutate(id = row_number())
+
+str(data_raw)
 ```
+
+
+
 
 ```{r}
 tokens_raw <- unnest_tokens(data_raw, word, reviews.text)
@@ -122,6 +143,7 @@ unique(tokens_stemmed$word)
 ```{r}
 tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 ```
+
 ```{r}
 tokens_clean %<>%
   anti_join(stop_words)
@@ -139,7 +161,20 @@ tokens_clean %<>% anti_join(stop_words %>% bind_rows(own_stopwords), by = "word"
 ```
 
 ```{r}
-topword <- tokens_clean %>% count(word, sort=TRUE) %>% head(100)
+tokens_stemmed %<>%
+  add_count(id, word, name = "nword") %>%
+  add_count(id, name = "ntweet") %>%
+  filter(nword > 1 & ntweet > 5) %>%
+    select(-nword, -ntweet)
+```
+
+```{r}
+tokens_stemmed <- tokens_stemmed %>% mutate(word = wordStem(word))
+```
+
+
+```{r}
+topwords <- tokens_stemmed %>% count(word, sort=TRUE)
 ```
 
 ```{r}
@@ -152,6 +187,35 @@ topwords %>%
        x = "Frequency", 
        y = "Top Words")
 ```
+
+```{r}
+topwords %>%
+  ggplot(aes(x = n)) + 
+  geom_histogram()
+```
+
+```{r}
+wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, colors = brewer.pal(8,"Dark2"))
+```
+## TF-IDF
+
+```{r}
+group_words = tokens_stemmed %>% count(name, word, sort=TRUE)
+total_words = group_words %>% group_by(name) %>% summarize(total = sum(n)) 
+tokens_tfidf = left_join(group_words, total_words)
+```
+
+```{r}
+tokens_tfidf <- tokens_tfidf %>% bind_tf_idf(word, name, n)
+```
+
+Now I'll remove the column total and arrange it by the highest tf-idf. 
+
+```{r}
+tokens_tfidf %>% select(-total) %>% arrange(desc(tf_idf))
+```
+
+
 
 
 # Machine learning
