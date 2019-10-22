@@ -355,24 +355,6 @@ sentiment_nrc %>% count(sentiment)
 
 
 
-
-```{r}
-tokens_tfidf <- tokens_tfidf %>% bind_tf_idf(word, name, n)
-```
-
-
-
-
-Now I'll remove the column total and arrange it by the highest tf-idf. 
-
-
-
-
-```{r}
-tokens_tfidf %>% select(-total) %>% arrange(desc(tf_idf))
-```
->>>>>>> 9efb030ef3cb127cb466ec28b946317519c1aefb
-
 ##LSA
 
 ##LDA
