@@ -94,6 +94,7 @@ Now we load the data we downloaded from kaggle. From this file we select the fol
 
 - reviews.text: The review text written by the customer. 
 
+The data is cleaned by removing punctuations, numbers and changing all strings to lower case in the review text. 
 ```{r}
 data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
@@ -105,15 +106,15 @@ data_clean <- data_raw %>%
   mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
-
+We here want to primarily work with tidy text, where there is one token per row. This is now created below. 
 
 
 ```{r}
 tokens_raw <- unnest_tokens(data_clean, word, reviews.text)
-tokens_clean <- tokens_raw %>%
-  filter(str_length(word) > 0)
+tokens_clean <- tokens_raw # extra filtering at some point? 
+
 ```
-155.258 tokens. 
+We now have 153.085 tokens, in their each seperate rows. 
 
 
 
@@ -185,12 +186,7 @@ bigram_graph <- bigram_counts %>%
   filter(n > 15) %>% 
   graph_from_data_frame()
 
-bigram_graph
 
-ggraph(bigram_graph,layout = "fr") +
-  geom_edge_link() +
-  geom_node_point() +
-  geom_node_text(aes(label = name),vjust =1, hjust=1)
 
 a<- grid::arrow(type = "closed",length = unit(.15,"inches"))
 
@@ -205,13 +201,55 @@ ggraph(bigram_graph, layout = "fr") +
 
 ```{r}
 #Correlation bigrams
-bigram_section <- data_raw %>% 
+bigram_section <- data_clean %>% 
   unnest_tokens(word,reviews.text) %>% 
   filter(!word %in% stop_words$word)
 bigram_section
 
+word_pairs <- bigram_section %>% 
+  pairwise_count(word, id, sort = TRUE)
 
+word_pairs
 ```
+
+
+```{r}
+word_cors <- bigram_section %>% 
+  group_by(word) %>% 
+  filter(n()>= 20) %>% 
+  pairwise_cor(word,id,sort=TRUE)
+
+word_cors
+```
+
+
+
+```{r}
+word_cors %>% 
+  filter(item1 %in% c("kindle","fire")) %>% 
+  group_by(item1) %>% 
+  top_n(6) %>% 
+  ungroup() %>% 
+  mutate(item2 = reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ item1, scales = "free") +
+  coord_flip()
+```
+
+
+
+```{r}
+word_cors %>% 
+  filter(correlation > .275) %>% 
+  graph_from_data_frame() %>% 
+  ggraph(layout="fr") +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_node_point(color = "pink",size=3) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_void()
+```
+
 
 
 
