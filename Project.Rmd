@@ -426,9 +426,6 @@ mutate(overall_sentiment = positive - negative)
 ###Afinn
 
 ```{r, include=FALSE}
-
-get_sentiments("afinn")
-
 sentiment_afinn <- tokens_stemmed %>%
   inner_join(get_sentiments("afinn")) %>%
   group_by(reviews.rating) %>%
@@ -437,36 +434,9 @@ sentiment_afinn <- tokens_stemmed %>%
 ```
 
 ```{r}
-sentiment_afinn$
-```
-=======
-word_counts <- sentiment_analysis %>%
-count(word, sentiment) %>%
-group_by(sentiment) %>%
-top_n(10, n) %>%
-ungroup() %>%
-mutate(
-word2 = fct_reorder(word, n))
-
-ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
-geom_col(show.legend = FALSE) +
-facet_wrap(~ sentiment, scales ="free") +
-coord_flip() +
-labs(title ="Sentiment Word Counts",x ="Words")
+sentiment_afinn
 ```
 
-```{r}
-sentiment_analysis <- sentiment_nrc %>% filter(sentiment %in% c("anger"
-,"disgust", "fear", "negative", "sadness"))
-
-word_counts <- sentiment_analysis %>%
-count(word, sentiment) %>%
-group_by(sentiment) %>%
-top_n(10, n) %>%
-ungroup() %>%
-mutate(word2 = fct_reorder(word, n))
-
-```
 
 ```{r}
 ggplot(sentiment_afinn,aes(x = reviews.rating, y = sentiment, 
