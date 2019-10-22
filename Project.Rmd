@@ -185,7 +185,12 @@ data_raw  %>%
 
 
 ```{r}
+bigram_tf_idf <- bigrams_united %>%
+  count(reviews.title, bigrams) %>%
+  bind_tf_idf(bigrams, reviews.title, n) %>%
+  arrange(desc(tf_idf))
 
+bigram_tf_idf
 ```
 
 
