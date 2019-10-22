@@ -348,12 +348,11 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE, max.words = 50, color
 ##Sentiment analysis
 
 ```{r}
-sentiment_review = tokens_stemmed %>% get_sentiments("nrc")
+sentiment_nrc <- tokens_stemmed %>% inner_join(get_sentiments("bing"))
 
-sentiment_review %>% count(sentiment)
+sentiment_nrc %>% count(sentiment)
 ```
 
-=======
 
 
 
