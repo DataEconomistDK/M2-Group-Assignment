@@ -466,6 +466,7 @@ top_n(10, n) %>%
 ungroup() %>%
 mutate(word2 = fct_reorder(word, n))
 
+```
 
 ```{r}
 ggplot(sentiment_afinn,aes(x = reviews.rating, y = sentiment, 
