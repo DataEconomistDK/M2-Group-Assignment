@@ -3,12 +3,14 @@ title: "M2-Project"
 author: "Mathias Flinta"
 date: "21/10/2019"
 output:
-  html_document: 
-    toc: TRUE
-    toc_float: TRUE
-    df_print: paged
+  html_document:
     code_folding: hide
-    number_sections: TRUE
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
 ---
 
 # Introduction and set-up
@@ -514,12 +516,6 @@ ggplotly(x)
 ## LDA
 
 
-```{r}
-pacman::p_load(lda, # For LDA-analysis
-               topicmodels) # LDA models
-```
-
-
 The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
 ```{r}
 data_dtm <- tokens_stemmed %>%
@@ -535,13 +531,13 @@ The matrix is rather sparse (Sparsity = 100%). We can try to reduce this by dele
 data_dtm %>% removeSparseTerms(sparse = .99)
 ```
 
-The Sparsity is now 97% which is less than before but still rather sparce. The number of terms went from 516 to 40. Which is a too high reduction.
+The Sparsity is now 97% which is less than before but still rather sparce. The number of terms went from 3543 to 245. Which is a too high reduction.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .999)
 ```
 
-The Sparsity is now 99% which is higher than before. The number of terms is now 313 (vs. 516). That's 3/5 of the 'original' terms.
+The Sparsity is now 99% which is higher than before. The number of terms is now 1224 (vs. 3543). That's 1/3 of the 'original' terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .9999)
@@ -551,14 +547,14 @@ The results above is just the exact the same as before we tried to remove the sp
 
 
 Next we perfome a LDA. We're using the "Gibbs" sampling as method.
-```{r}
+```{r chunk_name, include=FALSE}
 data_lda <- data_dtm %>%
   LDA(k = 2, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
 
-```{r}
+```{r chunk_name, include=FALSE}
 lda_beta <- data_lda %>%
   tidy(matrix = "beta") %>%
   group_by(topic) %>%
@@ -570,7 +566,7 @@ lda_beta %>% head()
 ```
 
 
-```{r}
+```{r chunk_name, echo=FALSE}
 lda_beta %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   group_by(topic, term) %>%
@@ -584,10 +580,9 @@ lda_beta %>%
        x = NULL, y = expression(beta)) +
   facet_wrap(~ topic, ncol = 2, scales = "free")
 ```
-Above the top 10 terms in each LDA topic are displayed. We choose the number of three clusters since choosing a higher number results in the same words displayed in two or more clusters.
+Above the top 10 terms in each LDA topic are displayed. We choose the number of two clusters since choosing a higher number results in the same words displayed in two or more clusters.
 
-It seems like cluster 1 contains some words with a tecnological character (tablet, screen, devic, app, game) while cluster 2 seems related to books and reading (kindl, read, book). The last cluster, 3, contains some positive words (love and smart) as the only cluster - besides "easi" in cluster 2
-
+It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
 
 
 
