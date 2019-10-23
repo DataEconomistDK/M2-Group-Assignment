@@ -108,7 +108,7 @@ data_clean <- data_raw %>%
   mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
-We here want to primarily work with tidy text, where there is one token per row. This is now created below. 
+We here want to primarily work with tidy text, where there is one token per row. This is now created below and some additional cleaning are done, which is easier to do with the tokens directly. 
 
 
 ```{r}
@@ -545,7 +545,7 @@ data_dtm %>% removeSparseTerms(sparse = .9999)
 
 ```{r}
 data_lda <- data_dtm %>%
-  LDA(k = 5, method = "Gibbs",
+  LDA(k = 3, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
@@ -577,16 +577,16 @@ lda_beta %>%
   facet_wrap(~ topic, ncol = 2, scales = "free")
 ```
 
+It seems like cluster 1 contains some words with a tecnological character (tablet, screen, devic, app, game) while cluster 2 seems related to books and reading (kindl, read, book). The last cluster, 3, contains some positive words (love and smart) as the only cluster - besides "easi" in cluster 2
+
+
+
+
 
 ```{r}
-
+top_topics %>%
+  count(topic)
 ```
-
-```{r}
-
-```
-
-
 
 
 
