@@ -236,7 +236,8 @@ In this section we will analyze the xxxx.
 
 ## Data preprocessing
 
-Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  We will start to look at the top 100 words. 
+Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  Words have also been through a lemmatazation.
+We will start to look at the top 100 words. 
 
 ```{r}
 tokens_clean %>% count(word, sort=TRUE) %>% head(100)
@@ -245,8 +246,7 @@ tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 Before looking for our own stopwords, we will move all stopwords build into the package, tidytext, called SMART. 
 
 ```{r}
-tokens_clean %<>%
-  anti_join(stop_words)
+tokens_clean %>% anti_join(stop_words)
 ```
 
 After that we will look throuh the tokens_clean dataframe again and remove our own stopwords, where we decied to remove these five stopwords. 
@@ -256,31 +256,16 @@ own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"),
                         lexicon = "OWN")
 ```
 
-Now we will remove out own stopwords.
+Now we will remove out own stopwords. Afterwards we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
 
 ```{r}
-tokens_clean %>% 
+tokens_stemmed <- tokens_clean %>% 
   anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
 
+tokens_stemmed <- tokens_stemmed%>% add_count(id, name = "ndoc") %>% filter(ndoc > 5) %>% select(-ndoc)
 ```
 
-Now we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
-
-```{r}
-tokens_stemmed <- tokens_clean %<>%
-  add_count(id, name = "ndoc") %>%
-  filter(ndoc > 5) %>% select(-ndoc)
-
-```
-
-
-
-```{r}
-tokens_stemmed <- tokens_stemmed %>% 
-  mutate(word = wordStem(word))
-```
-
-After doing the lemmazation, we will now again look at the top words and again plot them.
+We will now again look at the top words and again plot them.
 
 ```{r}
 topwords <- tokens_stemmed %>% count(word, sort=TRUE)
@@ -313,14 +298,30 @@ We tried to run a tf-idf analysis but we couldn't really say anything from the a
 
 ##Sentiment analysis
 
-In this section, we will be doing two sentiment analysis. Sentiment analysis is 
+ Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. Hereafter, we will analyzie the data using the afinn lexicon, which gives every word a score between -5 and 5. 
+
+###General analysis
+
+Before doing the sentiment analysis, we will quickly look a the distribution of the review ratings.
+
+```{r}
+summary(tokens_stemmed$reviews.rating)
+```
+
+Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.515 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1134 one-star review rating, 584 two-star review rating, 3028 three-star review rating, 12070 four-star review rating and 30383 five-star review rating. 
 
 ###Bing
+
+We wil start with the bing lexicon. The bing lexicon categorizes words in a binary fashion into positive and negative categories. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can count the sentiments.
 
 ```{r}
 sentiment_bing <- tokens_stemmed %>% inner_join(get_sentiments("bing"))
 sentiment_bing %>% count(sentiment)
 ```
+
+Here we can see that there is a lot more positive than negative words, which we also explained earlier was due to the fact that there is a lot more positive then negative reviews. 
+
+Now we wil try to plot the sentiments, here grouped by positive and negative sentiments. We are plotting a word count, grouped by sentiment, showing the 10 most frequent negative and positive words.  
 
 ```{r}
 sentiment_analysis <- sentiment_bing %>% filter(sentiment %in% c("positive"
@@ -341,39 +342,15 @@ coord_flip() +
 labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
+Here we can see the positive words are much more frequent than the negative words. 
+
+And now we will count all positive and negative words for all five stars reviews. 
+
 ```{r}
 tokens_stemmed %>% inner_join(get_sentiments("bing")) %>% count(reviews.rating, sentiment)
 ```
 
-```{r}
-tokens_stemmed_bing = tokens_stemmed %>%
-inner_join(get_sentiments("bing")) %>%
-count(reviews.rating, sentiment) %>%
-spread(sentiment, n) %>%
-mutate(overall_sentiment = positive - negative)
-```
-
-```{r}
-ggplot(
-tokens_stemmed_bing,
-aes(x = reviews.rating, y = overall_sentiment, fill = as.factor(reviews.rating))
-) +
-geom_col(show.legend = FALSE) +
-coord_flip() +
-labs(
-title =
-"Overall Sentiment by Stars"
-,
-subtitle =
-"Reviews for Robotic Vacuums"
-,
-x =
-"Stars"
-,
-y =
-"Overall Sentiment"
-)
-```
+And here we will show all the words in one table, where we again can see that the positive words are overrepresented compared to the negative words.
 
 ```{r}
 bing_word_counts <- tokens_stemmed %>%
@@ -382,6 +359,50 @@ bing_word_counts <- tokens_stemmed %>%
   ungroup()
 
 bing_word_counts
+```
+What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not in out data not included in the lexicon, or there may be a lot of neutral words.
+
+Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative.
+
+```{r, include=FALSE}
+tokens_stemmed_bing <- tokens_stemmed %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(reviews.rating, sentiment) %>%
+  spread(sentiment, n) %>%
+  mutate(overall_sentiment = positive - negative)
+```
+
+And then we will plot it. 
+
+```{r}
+ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = overall_sentiment, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
+, y = "Overall Sentiment")
+```
+
+What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how the 
+
+```{r}
+n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
+s1 <- tokens_stemmed_bing$overall_sentiment[1] / count(n1)
+n2 <- tokens_stemmed %>% filter(reviews.rating == 2)
+s2 <- tokens_stemmed_bing$overall_sentiment[2] / count(n2)
+n3 <- tokens_stemmed %>% filter(reviews.rating == 3)
+s3 <- tokens_stemmed_bing$overall_sentiment[3] / count(n3)
+n4 <- tokens_stemmed %>% filter(reviews.rating == 4)
+s4 <- tokens_stemmed_bing$overall_sentiment[4] / count(n4)
+n5 <- tokens_stemmed %>% filter(reviews.rating == 5)
+s5 <- tokens_stemmed_bing$overall_sentiment[5] / count(n5)
+```
+
+```{r}
+x <- c(s1,s2,s3,s4,s5)
+```
+
+```{r}
+ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
+, y = "Overall Sentiment")
 ```
 
 
@@ -500,7 +521,7 @@ The results above is just the exact the same as before we tried to remove the sp
 Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
-  LDA(k = 3, method = "Gibbs",
+  LDA(k = 5, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
@@ -571,7 +592,7 @@ data_joined <- data_frame(id = word_rownames) %>%
 rating_equal_5 <- data_joined$reviews.rating == "5"
 
 model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
-                  parallel = TRUE, keep = TRUE)
+                  parallel = TRUE, keep = FALSE)
 
 plot(model)
 
