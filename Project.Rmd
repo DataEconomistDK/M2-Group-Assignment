@@ -103,7 +103,7 @@ data_clean <- data_raw %>%
   mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
-We here want to primarily work with tidy text, where there is one token per row. This is now created below. 
+We here want to primarily work with tidy text, where there is one token per row. This is now created below and some additional cleaning are done, which is easier to do with the tokens directly. 
 
 
 ```{r}
