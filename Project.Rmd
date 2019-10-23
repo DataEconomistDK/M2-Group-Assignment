@@ -70,7 +70,8 @@ pacman::p_load(knitr, # For knitr to html
                quanteda,
                uwot,
                dbscan,
-               plotly
+               plotly,
+               rsample
                )
 
 # I set a seed for reproduciability
@@ -587,6 +588,9 @@ lda_beta %>%
 
 # Machine learning
 
+```{r}
+
+```
 
 
 
