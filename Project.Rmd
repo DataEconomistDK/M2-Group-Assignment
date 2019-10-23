@@ -19,13 +19,6 @@ Link for google colab:
 
 Link for github: https://github.com/DataEconomistDK/M2-Group-Assignment 
 
-R-rules: (delete before handin)
-Data may not be overwritten, but may always be given new meaningfull names. data_raw, data_tidy ect. 
-Always lower case letters. 
-Inline code comments are only for technical use ect. All other explanation should be text. 
-We load all packages in the top. 
-We write in document without any branches. 
-
 In this project we will work with a dataset of 5.000 consumer reviews for a few Amazon electronic products like f. ex. Kindle. Data is collected between September 2017 and October 2018. This is a sample taken from Kaggle which is a part of a much bigger dataset available trough Datafiniti. The data can be collected from this link: https://www.kaggle.com/datafiniti/consumer-reviews-of-amazon-products?fbclid=IwAR1o_blPfHeBPmnUzAOW7Ct24L7fhbI3OGcbfaVgaDZENhVXwaCP4godKvQ#Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv
 
 Note there is 3 available dataset on kaggle, but the file used here is called "Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products". The file is downloaded as is, and imported further below. 
@@ -112,7 +105,8 @@ We here want to primarily work with tidy text, where there is one token per row.
 
 ```{r}
 tokens_raw <- unnest_tokens(data_clean, word, reviews.text)
-tokens_clean <- tokens_raw 
+tokens_clean <- tokens_raw %>% 
+  mutate(word = word %>% str_remove_all("[^a-zA-Z0-9]"))
 
 ```
 We now have 153.085 tokens, in their each seperate rows. 
@@ -178,32 +172,10 @@ bigram_counts <- bigrams_filtered %>%
 bigram_counts
 ```
 
-Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. This is done by using the 'tidyr' function 'unite'. The purpose is to treat the bigram as a 'term in a document'. Therefore we can look at the tf_idf values
-of bigrams and visualize them.
+Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. This is done by using the 'tidyr' function 'unite'. The purpose is to treat the bigram as a 'term in a document'.
 
-```{r}
-bigrams_united <- bigrams_filtered %>% 
-  unite(bigrams, word1, word2,sep = " ")
-
-```
-
-Creating the tf_idf values for the bigram:
-
-```{r}
-bigram_tf_idf <- bigrams_united %>%
-  count(reviews.title, bigrams) %>%
-  bind_tf_idf(bigrams, reviews.title, n) %>%
-  arrange(desc(tf_idf))
-
-bigram_tf_idf
-```
-
-#### COMMENT ON THE TF_IDF #####
-
-The interesting thing is now to visualize the relationship between all words. To this we will use the
-package igraph. Before doing this we will need to create the graph from a data frame. Where we take a 
-data frame of edges with columns for 'from', 'to'. Which is equal to n.
-
+The interesting thing is now to visualize the relationship between all words. To this we will use the package igraph. Before doing this we will need to create the graph from a data frame of the bigrams. Where we take a data frame of edges with columns for 'from', 'to'. Which is equal to n.
+## Comment more about network
 
 ```{r}
 bigram_graph <- bigram_counts %>% 
@@ -227,7 +199,7 @@ thing as 'son' 'wife' and 'daugther' are connected with 'loves'.
 
 #Correlation bigrams
 
-
+Check up on this! 
 
 ```{r}
 #Correlation bigrams
@@ -250,7 +222,7 @@ word_cors <- bigram_section %>%
 word_cors
 ```
 
-
+Maybe choose other names
 
 ```{r}
 word_cors %>% 
@@ -265,7 +237,7 @@ word_cors %>%
   coord_flip()
 ```
 
-
+Maybe add colour scale. 
 
 ```{r}
 word_cors %>% 

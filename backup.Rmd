@@ -1,0 +1,24 @@
+---
+title: "backup"
+author: "Mathias Flinta"
+date: "10/23/2019"
+output: html_document
+---
+
+
+Creating the tf_idf values for the bigram:
+
+```{r}
+bigrams_united <- bigrams_filtered %>% 
+  unite(bigrams, word1, word2,sep = " ")
+
+
+bigram_tf_idf <- bigrams_united %>%
+  count(reviews.title, bigrams) %>%
+  bind_tf_idf(bigrams, reviews.title, n) %>%
+  arrange(desc(tf_idf))
+
+bigram_tf_idf
+```
+
+
