@@ -604,7 +604,7 @@ data_joined <- data_frame(id = word_rownames) %>%
 rating_equal_5 <- data_joined$reviews.rating == "5"
 
 model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
-                  parallel = TRUE, keep = TRUE)
+                  parallel = TRUE, keep = FALSE)
 
 plot(model)
 
