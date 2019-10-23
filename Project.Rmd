@@ -504,15 +504,16 @@ ggplotly(x)
 
 
 
-##LDA
+## LDA
+
 
 ```{r}
-pacman::p_load(lda,
-               topicmodels)
+pacman::p_load(lda, # For LDA-analysis
+               topicmodels) # LDA models
 ```
 
 
-
+The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to 
 ```{r}
 data_dtm <- tokens_stemmed %>%
   count(id, word) %>%
@@ -574,11 +575,14 @@ It seems like cluster 1 contains some words with a tecnological character (table
 
 
 
+<<<<<<< HEAD
 
 
 
 
 
+=======
+>>>>>>> 2e2c860d6fb05d3e367994d5e48dac3d2194e043
 # Machine learning
 
 ```{r}
