@@ -637,7 +637,7 @@ model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
 
 plot(model)
 
-plot(model$glmnet.fit)
+plot(model$glmnet.fit,xvar="dev",label=FALSE)
 ```
 
 
