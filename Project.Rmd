@@ -630,7 +630,7 @@ data_joined <- data_frame(id = word_rownames) %>%
 rating_equal_5 <- data_joined$reviews.rating == "5"
 
 model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
-                  parallel = TRUE, keep = FALSE)
+                  parallel = TRUE, keep = TRUE)
 
 plot(model)
 
@@ -667,7 +667,46 @@ classifications <- tokens_clean %>%
   summarize(score = sum(estimate)) %>%
   mutate(probability = plogis(intercept + score))
 
-classifications
+hist(classifications$probability)
 ```
 
+
+```{r}
+comment_classes <- classifications %>% 
+  left_join(data_clean %>% select(reviews.rating, id),by = "id") %>% 
+  mutate(reviews.rating = as.factor(reviews.rating))
+
+comment_classes %>% 
+  roc_curve(as.factor(reviews.rating=="5"), probability) %>% 
+  ggplot(aes(x = 1 - sensitivity , y = sensitivity)) +
+  geom_line(
+    color = "midnightblue",
+    size = 1.5) + 
+  geom_abline(lty = 2, alpha = 0.5,
+              color = "gray50",
+              size = 1.2) +
+  labs(
+    title = "ROC curve for text classification using regularized regression",
+    subtitle = "Predicting whether text was written by Jane Austen or H.G. Wells"
+  )
+```
+
+```{r}
+comment_classes %>% 
+  roc_auc(as.factor(reviews.rating=="5"),probability)
+```
+
+```{r}
+############## Denne del fungere ikke endnu Mathias.
+
+comment_classes %>%
+  mutate(
+    prediction = case_when(
+      probability > 0.5 ~ "Pride and Prejudice",
+      TRUE ~ "The War of the Worlds"
+    ),
+    prediction = as.factor(prediction)
+  ) %>%
+  conf_mat(reviews.rating, prediction)
+```
 
