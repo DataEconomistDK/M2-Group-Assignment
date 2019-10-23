@@ -71,7 +71,11 @@ pacman::p_load(knitr, # For knitr to html
                uwot,
                dbscan,
                plotly,
-               rsample
+               rsample,
+               glmnet,
+               doMC,
+               broom,
+               yardstick
                )
 
 # I set a seed for reproduciability
@@ -92,52 +96,44 @@ Now we load the data we downloaded from kaggle. From this file we select the fol
 
 - reviews.text: The review text written by the customer. 
 
-The data is cleaned by removing punctuations, numbers and changing all strings to lower case in the review text. 
 ```{r}
 data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
   mutate(id = row_number())
 
-data_clean <- data_raw %>% 
-  mutate(reviews.text = reviews.text %>% str_remove_all("[[:punct:]]")) %>% 
-  mutate(reviews.text = reviews.text %>% str_remove_all("[[:digit:]]")) %>% 
-  mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
-We here want to primarily work with tidy text, where there is one token per row. This is now created below and some additional cleaning are done, which is easier to do with the tokens directly. 
+As the data is very raw and messy we now do some cleaning. We remove everything that is not normal letters, such as punctuations, numbers, special characters ect, and changing all strings to lower case in the review text. 
 
+We will also do some lemmatization. The purpose of this is to not only analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. Lemmatization try and do so, by using detailed dictionaries which the algorithm looks trough to link a given word string back to it's root word. This is a more advanced method than stemming and should be beneficial in this report.
+
+We here want to primarily work with tidy text, where there is one token per row. So new a clean and filtered dataset is created both with tokens and as normal dataframe with the review text. 
 
 ```{r}
-tokens_raw <- unnest_tokens(data_clean, word, reviews.text)
-tokens_clean <- tokens_raw %>% 
-  mutate(word = word %>% str_remove_all("[^a-zA-Z0-9]"))
+tokens_clean <- data_raw %>% 
+  unnest_tokens(word, reviews.text, to_lower = TRUE) %>% 
+  mutate(word = word %>% str_remove_all("[^a-zA-Z]")) %>%
+  filter(str_length(word) > 0) %>% 
+  mutate(word = lemmatize_words(word))
+
+reviewtext_lemma <- tokens_clean %>% 
+  group_by(id) %>% 
+  summarize(reviews.text = str_c(word, collapse = " ")) %>% 
+  ungroup() %>% 
+  select(reviews.text) %>% 
+  as_vector()
+
+data_clean <- data_raw %>%
+  mutate(reviews.text = reviewtext_lemma)
 
 ```
-We now have 153.085 tokens, in their each seperate rows. 
 
+We now have 153.994 tokens, in their each seperate rows in the tokens dataset. By doing lemmatization the number of unique tokens are reduced from around 6000 to around 4600 words, which should prove quite beneficial. 
 
 
 # Network analysis
 
 In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. 
-
-## Preprocessing 
-
-First we will do some lemmatization. The purpose of this is to not only analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. Lemmatization try and do so, by using detailed dictionaries which the algorithm looks trough to link a given word string back to it's root word. This is a more advanced method than stemming and should be beneficial in this report.
-
-```{r}
-#Lemmatazion
-tokens_lemma <- tokens_clean %>% 
-  mutate(word = lemmatize_words(word))
-
-reviewtext_lemma <- tokens_lemma %>% 
-  group_by(id) %>% 
-  summarize(text.review = str_c(word, collapse = " ")) %>% 
-  ungroup() %>% 
-  select(text.review) %>% 
-  as_vector()
-```
-By doing this the number of unique words are reduced from around 6000 to around 4600 words, which should prove quite beneficial. 
 
 Bigrams are now created, by unnesting the tokens. 
 
@@ -179,6 +175,7 @@ bigram_counts
 Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. This is done by using the 'tidyr' function 'unite'. The purpose is to treat the bigram as a 'term in a document'.
 
 The interesting thing is now to visualize the relationship between all words. To this we will use the package igraph. Before doing this we will need to create the graph from a data frame of the bigrams. Where we take a data frame of edges with columns for 'from', 'to'. Which is equal to n.
+
 ## Comment more about network
 
 ```{r}
@@ -582,11 +579,74 @@ It seems like cluster 1 contains some words with a tecnological character (table
 # Machine learning
 
 ```{r}
+data_split <- data_clean %>% 
+  select(id) %>% 
+  initial_split()
 
+train_data <- training(data_split)
+test_data <- testing(data_split)
+```
+
+Transforming training data to a sparse Matrix
+```{r}
+sparse_words <- tokens_clean %>% 
+  count(id,word) %>% 
+  inner_join(train_data) %>% 
+  cast_sparse(id,word)
+
+class(sparse_words)
+```
+
+```{r}
+dim(sparse_words)
+
+word_rownames <- as.integer(rownames(sparse_words))
+
+
+data_joined <- data_frame(id = word_rownames) %>% 
+  left_join(data_clean %>% select(id, reviews.rating))
+
+rating_equal_5 <- data_joined$reviews.rating == "5"
+
+model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
+                  parallel = TRUE, keep = TRUE)
+
+plot(model)
+
+plot(model$glmnet.fit)
 ```
 
 
 
+```{r}
+coefs <- model$glmnet.fit %>% 
+  tidy() %>% 
+  filter(lambda == model$lambda.1se)
 
+coefs %>% 
+  group_by(estimate > 0) %>% 
+  top_n(10, abs(estimate)) %>% 
+  ungroup() %>% 
+  ggplot(aes(fct_reorder(term, estimate),estimate, fill =estimate > 0)) +
+  geom_col(alpha = 0.8, show.legend = FALSE) + 
+  coord_flip() + 
+  labs(x = NULL, title = "SDS ER LIVET", subtitle = "OG I VED DET")
+```
+
+
+```{r}
+intercept <- coefs %>%
+  filter(term == "(Intercept)") %>%
+  pull(estimate)
+
+classifications <- tokens_clean %>%
+  inner_join(test_data) %>%
+  inner_join(coefs, by = c("word" = "term")) %>%
+  group_by(id) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(intercept + score))
+
+classifications
+```
 
 
