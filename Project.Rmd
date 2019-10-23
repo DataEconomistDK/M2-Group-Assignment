@@ -561,6 +561,11 @@ It seems like cluster 1 contains some words with a tecnological character (table
 
 # Machine learning
 
+Introduction: What do we want to predict. 
+
+
+We split the data in a train and test dataset, using the proportions 3/4, which is standard in the "initial_split" command. 
+
 ```{r}
 data_split <- data_clean %>% 
   select(id) %>% 
@@ -570,19 +575,22 @@ train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
 
-Transforming training data to a sparse Matrix
+Maybe we want to filter away infrequent words here to get fewer features. 
+Transforming training data to a sparse Matrix, so a given cell is either empty or indicating the frequency it occurs by in a given document. 
 ```{r}
 sparse_words <- tokens_clean %>% 
   count(id,word) %>% 
   inner_join(train_data) %>% 
-  cast_sparse(id,word)
+  cast_sparse(id,word, n)
 
-class(sparse_words)
+dim(sparse_words)
 ```
 
-```{r}
-dim(sparse_words)
+In our training set, we have 3750 observertions and the 3677 features, which is the different tokens. We could also cbind other columns such as numeric data into the matrix here, such as sentiment numbers. 
 
+We now build a dataframe with the response variable. 
+
+```{r}
 word_rownames <- as.integer(rownames(sparse_words))
 
 
