@@ -268,28 +268,30 @@ word_cors %>%
 
 
 # NLP
+
+## Data preprocessing
+
+Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  We will start to look at the top 100 words. 
+
 ```{r}
 tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 ```
 
-
-
-
+Before looking for our own stopwords, we will move all stopwords build into the package, tidytext, called SMART. 
 
 ```{r}
 tokens_clean %<>%
   anti_join(stop_words)
 ```
 
-
+After that we will look throuh the tokens_clean dataframe again and remove our own stopwords, where we decied to remove these five stopwords. 
 
 ```{r}
 own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
                         lexicon = "OWN")
 ```
 
-
-
+Now we will remove out own stopwords.
 
 ```{r}
 tokens_clean %<>% 
@@ -297,17 +299,14 @@ tokens_clean %<>%
               bind_rows(own_stopwords), by = "word") 
 ```
 
-
-
+Now we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
 
 ```{r}
 tokens_stemmed <- tokens_clean %<>%
-  add_count(id, word, name = "nword") %>%
-  add_count(id, name = "ntweet") %>%
-  filter(nword > 1 & ntweet > 1) %>%
-    select(-nword, -ntweet)
-```
+  add_count(id, name = "ndoc") %>%
+  filter(ndoc > 5) %>% select(-ndoc)
 
+```
 
 
 
@@ -341,12 +340,6 @@ topwords %>%
 
 
 
-
-```{r}
-topwords %>%
-  ggplot(aes(x = n)) + 
-  geom_histogram()
-```
 
 
 
@@ -491,7 +484,7 @@ data_lsa_umap %<>% as.data.frame()
 ```
 
 ```{r}
-data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 50)
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 100)
 ```
 
 
