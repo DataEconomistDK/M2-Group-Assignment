@@ -141,7 +141,7 @@ reviewtext_lemma <- tokens_lemma %>%
 ```
 By doing this the number of unique words are reduced from around 6000 to around 4600 words, which should prove quite beneficial. 
 
-Bigrams are now created. Then the most common bigrams are displayed. 
+Bigrams are now created, by unnesting the tokens. 
 
 ```{r}
 bigrams <- data_clean %>%
@@ -151,7 +151,7 @@ bigrams <- data_clean %>%
 bigrams$bigram[1:2]
 ```
 
-Remember that each bigram overlap, as can be seen from above, so that the first token is "the display" and the second is "display is". 
+Remember that each bigram overlap, as can be seen from above, so that the first token is "the display" and the second is "display is". Now the most common bigrams are displayed. 
 
 ```{r}
 #Counting common bigrams
@@ -160,7 +160,7 @@ bigrams %>%
 
 ```
 
-Notice the most common bigrams are: "for my", "easy to", "to use", "it is". These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new count to see the most bigrams. 
+Notice the most common bigrams are: "for my", "easy to", "to use", "it is". These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new a new count to see the most bigrams after filtering. 
 
 
 ```{r}
@@ -178,11 +178,7 @@ bigram_counts <- bigrams_filtered %>%
 bigram_counts
 ```
 
-Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. 
-
-
-We want to recombine words by using 'tidyr' function 'unite'. This will be used to analyzing the bigrams.
-The purpose is to threat the bigram as a 'term in a document'. Therefor we can look at the tf_idf values
+Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. This is done by using the 'tidyr' function 'unite'. The purpose is to treat the bigram as a 'term in a document'. Therefore we can look at the tf_idf values
 of bigrams and visualize them.
 
 ```{r}
