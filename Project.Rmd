@@ -735,9 +735,9 @@ Maybe we want to filter away infrequent words here to get fewer features.
 Transforming training data to a sparse Matrix, so a given cell is either empty or indicating the frequency it occurs by in a given document. 
 ```{r}
 sparse_words <- tokens_clean %>% 
-  count(id,word) %>% 
+  count(id, word) %>% 
   inner_join(train_data) %>% 
-  cast_sparse(id,word, n)
+  cast_sparse(id, word, n)
 
 dim(sparse_words)
 ```
@@ -749,19 +749,20 @@ We now build a dataframe with the response variable for the ratings.
 ```{r}
 word_rownames <- as.integer(rownames(sparse_words))
 
-
 data_joined <- data_frame(id = word_rownames) %>% 
   left_join(data_clean %>% select(id, reviews.rating))
 
 rating_equal_5 <- data_joined$reviews.rating == "5"
 
-model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
+model <-cv.glmnet(sparse_words, rating_equal_5, family="binomial",
                   parallel = TRUE, keep = TRUE)
 
 plot(model)
 
 plot(model$glmnet.fit)
 ```
+
+
 
 
 
@@ -777,9 +778,10 @@ coefs %>%
   ggplot(aes(fct_reorder(term, estimate),estimate, fill =estimate > 0)) +
   geom_col(alpha = 0.8, show.legend = FALSE) + 
   coord_flip() + 
-  labs(x = NULL, title = "SDS ER LIVET", subtitle = "OG I VED DET")
+  labs(x = NULL, title = "Coefficients that increase/decrease probability the most")
 ```
 
+This means that "terrible" and "demonstrate" are unlikely to be written in a review.
 
 ```{r}
 intercept <- coefs %>%
@@ -798,24 +800,26 @@ hist(classifications$probability)
 
 
 ```{r}
-comment_classes <- classifications %>% 
-  left_join(data_clean %>% select(reviews.rating, id),by = "id") %>% 
-  mutate(reviews.rating = as.factor(reviews.rating))
-
-comment_classes %>% 
-  roc_curve(as.factor(reviews.rating=="5"), probability) %>% 
-  ggplot(aes(x = 1 - sensitivity , y = sensitivity)) +
-  geom_line(
-    color = "midnightblue",
-    size = 1.5) + 
-  geom_abline(lty = 2, alpha = 0.5,
-              color = "gray50",
-              size = 1.2) +
-  labs(
-    title = "ROC curve for text classification using regularized regression",
-    subtitle = "Predicting whether text was written by Jane Austen or H.G. Wells"
-  )
+#comment_classes <- classifications %>% 
+#  left_join(data_clean %>% select(reviews.rating, id),by = "id") %>% 
+#  mutate(reviews.rating = as.factor(reviews.rating))
+#
+#comment_classes %>% 
+#  roc_curve(as.factor(reviews.rating=="5"), probability) %>% 
+#  ggplot(aes(x = 1 - sensitivity , y = sensitivity)) +
+#  geom_line(
+#    color = "midnightblue",
+#    size = 1.5) + 
+#  geom_abline(lty = 2, alpha = 0.5,
+#              color = "gray50",
+#              size = 1.2) +
+#  labs(
+#    title = "ROC curve for text classification using regularized regression",
+#    subtitle = "Predicting whether text was written by Jane Austen or H.G. Wells"
+#  )
 ```
+
+# Slet ovenstående
 
 ```{r}
 comment_classes %>% 
@@ -823,7 +827,7 @@ comment_classes %>%
 ```
 
 ```{r}
-############## Denne del fungere ikke endnu Mathias.
+############## Denne del fungerer ikke endnu Mathias.
 
 comment_classes %>%
   mutate(
@@ -834,5 +838,31 @@ comment_classes %>%
     prediction = as.factor(prediction)
   ) %>%
   conf_mat(reviews.rating, prediction)
+```
+```{r}
+res <- classifications %>% 
+  group_by(id) %>% 
+  filter(probability == max(probability)) %>% 
+  left_join(data_raw, by = "id")
+
+result <- table(res$class, res$class.y)
+
+# Random assignment
+set.seed(17102019)
+
+prop <- data_raw %>% 
+  group_by(reviews.rating) %>% 
+  summarize(n = n())%>%
+  mutate(freq = n / sum(n))
+
+ran <- table(res$reviews.rating, sample(c(1, 2, 3, 4, 5), nrow(res), replace = T, prob = prop$freq))
+
+result
+ran
+
+kable(cbind(result,ran)) %>% kable_styling(c("bordered","condensed"), full_width = F) %>% 
+  add_header_above(c("Class"=1,"Elastic Net" = 3, "Random Assignment" = 3)) %>% 
+  add_header_above(c("Confusion Matrices" = 7))
+
 ```
 
