@@ -1,6 +1,5 @@
 ---
 title: "M2-Project"
-author: "Mathias Flinta"
 date: "21/10/2019"
 output:
   html_document:
@@ -265,8 +264,7 @@ word_cors %>%
 
 
 # NLP
-
-In this section we will analyze the xxxx.
+In this section we will analyze the data using Natural Language Processing. Here we will gain insight in the data set by extracting and identifing patterns. We will start by doing some data preprocessing before we start our analysis. Then we will so a sentiment analysis, where we analysis the words and whether they're positive or negative. Then we will do a LSA analysis, where we will apply dimentionality reductions and cluster the data to look for laternt patterns for the words and documents. And then we will do a LDA analysis to try to seperate the data into topics to look for patterns for the words.
 
 ## Data preprocessing
 
@@ -280,7 +278,7 @@ tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 Before looking for our own stopwords, we will move all stopwords build into the package, tidytext, called SMART. 
 
 ```{r}
-tokens_clean %>% anti_join(stop_words)
+tokens_nlp <- tokens_clean %>% anti_join(stop_words)
 ```
 
 After that we will look throuh the tokens_clean dataframe again and remove our own stopwords, where we decied to remove these five stopwords. 
@@ -293,16 +291,16 @@ own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"),
 Now we will remove out own stopwords. Afterwards we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
 
 ```{r}
-tokens_stemmed <- tokens_clean %>% 
+tokens_nlp <- tokens_clean %>% 
   anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
 
-tokens_stemmed <- tokens_stemmed%>% add_count(id, name = "ndoc") %>% filter(ndoc > 5) %>% select(-ndoc)
+tokens_nlp <- tokens_nlp %>% add_count(id, name = "ndoc") %>% filter(ndoc > 5) %>% select(-ndoc)
 ```
 
 We will now again look at the top words and again plot them.
 
 ```{r}
-topwords <- tokens_stemmed %>% count(word, sort=TRUE)
+topwords <- tokens_nlp %>% count(word, sort=TRUE)
 
 topwords %>%
   top_n(20, n) %>%
@@ -332,14 +330,14 @@ We tried to run a tf-idf analysis but we couldn't really say anything from the a
 
 ##Sentiment analysis
 
- Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. 
+Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. 
 
 ###General analysis
 
 Before doing the sentiment analysis, we will quickly look a the distribution of the review ratings.
 
 ```{r}
-summary(tokens_stemmed$reviews.rating)
+summary(tokens_nlp$reviews.rating)
 ```
 
 Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.515 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1134 one-star review rating, 584 two-star review rating, 3028 three-star review rating, 12070 four-star review rating and 30383 five-star review rating. 
@@ -349,7 +347,7 @@ Here, we can see that there is a overepresentation of positive reviews, where th
 We wil start with the bing lexicon. The bing lexicon categorizes words in a binary fashion into positive and negative categories. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can count the sentiments.
 
 ```{r}
-sentiment_bing <- tokens_stemmed %>% inner_join(get_sentiments("bing"))
+sentiment_bing <- tokens_nlp %>% inner_join(get_sentiments("bing"))
 sentiment_bing %>% count(sentiment)
 ```
 
@@ -381,13 +379,13 @@ Here we can see the positive words are much more frequent than the negative word
 And now we will count all positive and negative words for all five stars reviews. 
 
 ```{r}
-tokens_stemmed %>% inner_join(get_sentiments("bing")) %>% count(reviews.rating, sentiment)
+tokens_nlp %>% inner_join(get_sentiments("bing")) %>% count(reviews.rating, sentiment)
 ```
 
 And here we will show all the words in one table, where we again can see that the positive words are overrepresented compared to the negative words.
 
 ```{r}
-bing_word_counts <- tokens_stemmed %>%
+bing_word_counts <- tokens_nlp %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   ungroup()
@@ -399,7 +397,7 @@ What's interesting is that there is only 345 unique words being included. In the
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative.
 
 ```{r, include=FALSE}
-tokens_stemmed_bing <- tokens_stemmed %>%
+tokens_nlp_bing <- tokens_nlp %>%
   inner_join(get_sentiments("bing")) %>%
   count(reviews.rating, sentiment) %>%
   spread(sentiment, n) %>%
@@ -409,7 +407,7 @@ tokens_stemmed_bing <- tokens_stemmed %>%
 And then we will plot it. 
 
 ```{r}
-ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = overall_sentiment, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = overall_sentiment, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
 labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
 , y = "Overall Sentiment")
 ```
@@ -417,16 +415,16 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how they distribute. First we will find the mean score for all five rating.
 
 ```{r}
-n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
-s1 <- tokens_stemmed_bing$overall_sentiment[1] / count(n1)
-n2 <- tokens_stemmed %>% filter(reviews.rating == 2)
-s2 <- tokens_stemmed_bing$overall_sentiment[2] / count(n2)
-n3 <- tokens_stemmed %>% filter(reviews.rating == 3)
-s3 <- tokens_stemmed_bing$overall_sentiment[3] / count(n3)
-n4 <- tokens_stemmed %>% filter(reviews.rating == 4)
-s4 <- tokens_stemmed_bing$overall_sentiment[4] / count(n4)
-n5 <- tokens_stemmed %>% filter(reviews.rating == 5)
-s5 <- tokens_stemmed_bing$overall_sentiment[5] / count(n5)
+n1 <- tokens_nlp %>% filter(reviews.rating == 1)
+s1 <- tokens_nlp_bing$overall_sentiment[1] / count(n1)
+n2 <- tokens_nlp %>% filter(reviews.rating == 2)
+s2 <- tokens_nlp_bing$overall_sentiment[2] / count(n2)
+n3 <- tokens_nlp %>% filter(reviews.rating == 3)
+s3 <- tokens_nlp_bing$overall_sentiment[3] / count(n3)
+n4 <- tokens_nlp %>% filter(reviews.rating == 4)
+s4 <- tokens_nlp_bing$overall_sentiment[4] / count(n4)
+n5 <- tokens_nlp %>% filter(reviews.rating == 5)
+s5 <- tokens_nlp_bing$overall_sentiment[5] / count(n5)
 ```
 
 Then we will combine the five mean values in a matrix.
@@ -438,7 +436,7 @@ x <- c(s1,s2,s3,s4,s5)
 And then plot the values.
 
 ```{r}
-ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
 labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
 , y = "Overall Sentiment")
 ```
@@ -450,7 +448,7 @@ Now, we will analyzie the data using the afinn lexicon, which gives every word a
 
 ```{r, include=FALSE}
 # get_sentiments("afinn") # used to download afinn package
-sentiment_afinn <- tokens_stemmed %>%
+sentiment_afinn <- tokens_nlp %>%
   inner_join(get_sentiments("afinn")) %>%
   group_by(reviews.rating) %>%
   summarize(sentiment = sum(value)) %>%
@@ -481,15 +479,15 @@ What's interesting here is that all reviews, except one star rating, have a posi
 Again, it could be interesting to look at the mean scores of each rating review, because of the distribution of the review ratings.
 
 ```{r}
-n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
+n1 <- tokens_nlp %>% filter(reviews.rating == 1)
 s1 <- sentiment_afinn$sentiment[1] / count(n1)
-n2 <- tokens_stemmed %>% filter(reviews.rating == 2)
+n2 <- tokens_nlp %>% filter(reviews.rating == 2)
 s2 <- sentiment_afinn$sentiment[2] / count(n2)
-n3 <- tokens_stemmed %>% filter(reviews.rating == 3)
+n3 <- tokens_nlp %>% filter(reviews.rating == 3)
 s3 <- sentiment_afinn$sentiment[3] / count(n3)
-n4 <- tokens_stemmed %>% filter(reviews.rating == 4)
+n4 <- tokens_nlp %>% filter(reviews.rating == 4)
 s4 <- sentiment_afinn$sentiment[4] / count(n4)
-n5 <- tokens_stemmed %>% filter(reviews.rating == 5)
+n5 <- tokens_nlp %>% filter(reviews.rating == 5)
 s5 <- sentiment_afinn$sentiment[5] / count(n5)
 ```
 
@@ -502,11 +500,14 @@ x <- c(s1,s2,s3,s4,s5)
 And then plot the values.
 
 ```{r}
-ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
-labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
-, y = "Overall Sentiment")
+ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+labs(title = "Mean of Sentiment Score for All Review Ratings" , subtitle = "Reviews", x = "Review rating"
+, y = "Mean Score of Sentiment")
 ```
-Here, we can see that the positive words have been giving a higher overall value than the negative reviews, which is quiet interesting. So overall, with this dictionary, five star rating have a higher number of positive minus negative words than one start rating have of the same thing. Compared to the same plot from the bing lexicon, where five star and one star was almost the same size, one star is much smaller compared to five stars in this plot. 
+Interesting enough, the overall mean score of sentiments is quiet small, which is due to the fact that overall people in each rating is quiet high and overall sentiment score is quiet low. 
+
+
+Here, we can see that the positive words have been giving a higher overall value than the negative reviews, which is quiet interesting. So overall, with this dictionary, five star rating have a higher mean value of overall sentiment than one start rating have negative. Compared to the same plot from the bing lexicon, where five star and one star was almost the same size, one star is a bit smaller compared to five stars. 
 
 ##LSA
 Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
@@ -517,7 +518,7 @@ First we create a sparse document-feature matrix from the corpus. Here we turn a
 
 ```{r}
 #Document-feature-matrix
-data_dfm = tokens_stemmed %>% count(id, word) %>% cast_dfm(document = id, term = word, value = n)
+data_dfm = tokens_nlp %>% count(id, word) %>% cast_dfm(document = id, term = word, value = n)
 ```
 
 Here, we have a document-feature matrix with 3306 documents (reviews) and 3542 feautures (words). 
@@ -647,7 +648,7 @@ Here the documents cluster differently than the features and they are much more 
 ## LDA
 The topicmodels package requires a document-term matrix as input: By using the function cast_dtm and tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
 ```{r}
-data_dtm <- tokens_stemmed %>%
+data_dtm <- tokens_nlp %>%
   count(id, word) %>%
   cast_dtm(document = id, term = word, value = n, weighting = tm::weightTf)
 
@@ -676,14 +677,14 @@ The results above is just the exact the same as before we tried to remove the sp
 
 
 Next we perfome a LDA. We're using the "Gibbs" sampling as method.
-```{r chunk_name, include=FALSE}
+```{r, include=FALSE}
 data_lda <- data_dtm %>%
   LDA(k = 2, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
 
-```{r chunk_name, include=FALSE}
+```{r, include=FALSE}
 lda_beta <- data_lda %>%
   tidy(matrix = "beta") %>%
   group_by(topic) %>%
@@ -695,7 +696,7 @@ lda_beta %>% head()
 ```
 
 
-```{r chunk_name, echo=FALSE}
+```{r, echo=FALSE}
 lda_beta %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   group_by(topic, term) %>%
@@ -712,8 +713,6 @@ lda_beta %>%
 Above the top 10 terms in each LDA topic are displayed. We choose the number of two clusters since choosing a higher number results in the same words displayed in two or more clusters.
 
 It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
-
-
 
 # Machine learning
 
@@ -822,8 +821,9 @@ hist(classifications$probability)
 # Slet ovenstående
 
 ```{r}
-comment_classes %>% 
-  roc_auc(as.factor(reviews.rating=="5"),probability)
+#for at jeg kunne printe den, har jeg lige markeret med hastag
+#comment_classes %>% 
+  #roc_auc(as.factor(reviews.rating=="5"),probability)
 ```
 
 ```{r}
@@ -865,4 +865,6 @@ kable(cbind(result,ran)) %>% kable_styling(c("bordered","condensed"), full_width
   add_header_above(c("Confusion Matrices" = 7))
 
 ```
+
+
 
