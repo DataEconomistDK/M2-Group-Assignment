@@ -28,7 +28,7 @@ Note there is 3 available dataset on kaggle, but the file used here is called "D
 ## Loading packages
 
 First i have some personal setup in my local R-Markdown on how i want to display warnings ect. And then i load my packages. 
-```{r}
+```{r, include=FALSE}
 ### Knitr options
 knitr::opts_chunk$set(warning=FALSE,
                      message=FALSE,
@@ -40,7 +40,7 @@ options(warn=-1) # Hides all warnings, as the knitr options only work on local R
 Sys.setenv(LANG = "en")
 ```
 
-```{r}
+```{r, include=FALSE}
 # Packages
 
 if (!require("pacman")) install.packages("pacman") # package for loading and checking packages :)
@@ -509,9 +509,11 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 Here, we can see that the positive words have been giving a higher overall value than the negative reviews, which is quiet interesting. So overall, with this dictionary, five star rating have a higher number of positive minus negative words than one start rating have of the same thing. Compared to the same plot from the bing lexicon, where five star and one star was almost the same size, one star is much smaller compared to five stars in this plot. 
 
 ##LSA
-Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities.
+Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
 
-First we create a sparse document-feature matrix from the corpus. Here we turn a tidy one-term-per-document-per-row data frame into a TermDocumentMatrix from the quanteda package. 
+First we create a sparse document-feature matrix from the corpus. Here we turn a tidy one-term-per-document-per-row data frame into a TermDocumentMatrix from the quanteda package.
+
+
 
 ```{r}
 #Document-feature-matrix
@@ -520,18 +522,20 @@ data_dfm = tokens_stemmed %>% count(id, word) %>% cast_dfm(document = id, term =
 
 Here, we have a document-feature matrix with 3306 documents (reviews) and 3542 feautures (words). 
 
-Then we fit the LSA scaling model to the dfm, where we set nd, the number of dimensions, to five. 
+Then we fit the LSA scaling model to the dfm, where we set nd, the number of dimensions, to 10. 
 
 ```{r, include=FALSE}
 #LSA scaling model
-data_dfm = data_dfm %>% 
+data_dfm1 = data_dfm %>% 
   textmodel_lsa(nd = 10)
 ```
+
+### Feature analysis
 
 And now we pull out the feautures and change them to a data frame. We'll start to look at the features, hence words.
 
 ```{r}
-data_lsa_loading <- data_dfm$features %>%
+data_lsa_loading <- data_dfm1$features %>%
   as.data.frame() %>%
   rownames_to_column(var = "word") %>% 
   as_tibble()
@@ -540,6 +544,7 @@ data_lsa_loading <- data_dfm$features %>%
 Now we can use the umap function, which stands for Uniform Manifold Approximation and Projection, a technique for dimension reduction. The function computes a manifold approximation and projection. 
 
 ```{r, include=FALSE}
+set.seed(123)
 data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("word"), 
                        n_neighbors = 15, metric = "cosine", min_dist = 0.01, scale = TRUE,
                        verbose = TRUE, n_threads = 8) 
@@ -554,12 +559,71 @@ data_lsa_umap %<>% as.data.frame()
 And then a transform it into a matrix and assign it a different name. The function hdbscan computes the hierarchical cluster tree, where minPts is the minimum size of the clusters. We are dealing with 3542, so a minimum could be 200 points. 
 
 ```{r}
-data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 100)
+set.seed(123)
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 200)
 ```
 
 And now we can plot the features, here in a two dimensional plot. Here it's clusters after the function clutser for the hbdscan and it assigns a prob for each data point, which is a probability of a data point within its cluster, which runs from 0 to 1.  
 
 ```{r}
+set.seed(123)
+x = data_lsa_umap %>% 
+  bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
+            prob = data_lsa_hdbscan$membership_prob) %>%
+  ggplot(aes(x = V1, y = V2, col = cluster)) + 
+  geom_point(aes(alpha = prob), shape = 21)
+
+ggplotly(x)
+```
+
+Here, the function in R has reduced the number of dimensions in the data set using the latent features of the data.
+
+And now we run a table to see how many feautures are in each cluster.
+
+```{r}
+table(data_lsa_hdbscan$cluster)
+```
+Here we can see the interactive plot for the features and how they cluster together. 
+
+Here, there's two different clusters and 91 outliers. One of the clusters is quiet big and have 3240 out of the 3542 features. The others are smaller and there's 91 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 100 features, but the function only makes two clusters. Unfortunately, we will not go any further regarding which words are in which clusters.
+
+### Document analysis
+
+Now, we will move on to analyzing the reviews ans how they cluster.
+
+```{r}
+data_lsa_loading <- data_dfm1$docs %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "id") %>% 
+  as_tibble()
+```
+
+Now we can use the umap function, which stands for Uniform Manifold Approximation and Projection, a technique for dimension reduction. The function computes a manifold approximation and projection. 
+
+```{r, include=FALSE}
+set.seed(123)
+data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("id"), 
+                       n_neighbors = 15, metric = "cosine", min_dist = 0.01, scale = TRUE,
+                       verbose = TRUE, n_threads = 8) 
+```
+
+And then we transform it into a dataframe. 
+
+```{r}
+data_lsa_umap %<>% as.data.frame() 
+```
+
+And then a transform it into a matrix and assign it a different name. The function hdbscan computes the hierarchical cluster tree, where minPts is the minimum size of the clusters. We are dealing with 3542, so a minimum could be 200 points. 
+
+```{r}
+set.seed(123)
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 200)
+```
+
+And now we can plot the features, here in a two dimensional plot. Here it's clusters after the function clutser for the hbdscan and it assigns a prob for each data point, which is a probability of a data point within its cluster, which runs from 0 to 1.  
+
+```{r}
+set.seed(123)
 x = data_lsa_umap %>% 
   bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
             prob = data_lsa_hdbscan$membership_prob) %>%
@@ -574,14 +638,14 @@ And now we run a table to see how many feautures are in each cluster.
 ```{r}
 table(data_lsa_hdbscan$cluster)
 ```
-Here we can see the interactive plot for the features and how they cluster together. 
 
-Here, there's three different clusters and 25 outliers. One of the clusters is quiet big and have 3042 out of the 3542 features. The others are smaller and there's 25 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 100 features, but the function only makes three clusters. 
+Here the documents cluster differently than the features and they are much more spread out, even when the minimum points are the same. There's also more outliers compared to the last plot. Here there's five clusters, which could be the five different rating the documents have clustered after, but it's latent features. 
+
+
+
 
 ## LDA
-
-
-The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
+The topicmodels package requires a document-term matrix as input: By using the function cast_dtm and tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
 ```{r}
 data_dtm <- tokens_stemmed %>%
   count(id, word) %>%
