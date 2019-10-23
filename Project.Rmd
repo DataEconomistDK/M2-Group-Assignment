@@ -173,16 +173,13 @@ bigram_counts
 
 Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. This is done by using the 'tidyr' function 'unite'. The purpose is to treat the bigram as a 'term in a document'.
 
-The interesting thing is now to visualize the relationship between all words. To this we will use the package igraph. Before doing this we will need to create the graph from a data frame of the bigrams. Where we take a data frame of edges with columns for 'from', 'to'. Which is equal to n.
-
-## Comment more about network
+The interesting thing is now to visualize the relationship between all words. To this we will use the package igraph. Before doing this we will need to create the graph from a data frame of the bigrams. Here nodes are the words, and the edges correspond to the connection between the two words in the bigram. The first word in the bigram is the column 'from', and the second word is 'to', and it's therefore a directed network. The edges are given a weight corresponding to how many times it occures in the total amount of reviews called 'n'. The weight is plotted as the alpha value, so more frequent bigrams have a darker colour, and vice versa. Only bigrams that occure more than 15 times are plotted in this network, as it otherwise would get to messy. 
 
 ```{r}
+set.seed(123)
 bigram_graph <- bigram_counts %>% 
-  filter(n > 15) %>%  #Sets the combination to atleast 15
+  filter(n > 15) %>%  #The occurence of the bigram is more than 15. 
   graph_from_data_frame()
-
-
 
 a<- grid::arrow(type = "closed",length = unit(.15,"inches"))
 
@@ -194,12 +191,12 @@ ggraph(bigram_graph, layout = "fr") +
   theme_void()
 ```
 
-The plot above, show us some details about the structure of the text. We can for example see that such 
-thing as 'son' 'wife' and 'daugther' are connected with 'loves'.
+The plot above, give us some insights about the connection of words in the reviews. If we where to chose a random word in the graph, the most likely word to come afterwards would be the outgoing connection with the darkest colour. This way we can kinda predict what words that come next. Remember that the words have been lemmatized, so it shows the root word so the sentence created would not be grammatical correct, but would still carry the meaning as a whole. 
 
-#Correlation bigrams
+We see many small connections such as customer -> service, sound -> quality, black -> friday and ect. Then we also have a bigger cluster where love is one of the key words. Many words such as kid, daughter, son, wife ect. point in the direction of love, and then outgoing edges from love is play, watch, alexa. Creating sentences such as "wife love alexa" or "kid love play". So first we have the person, then the sentiment word love, and then the action they do or what they love. We see that amazon is a central word with many outgoing connections, as many things are called "amazon prime", "amazon account" ect. Other key nodes are the product names such as "fire", "kindle", "hue". 
 
-Check up on this! 
+
+## Correlation 
 
 ```{r}
 #Correlation bigrams
@@ -532,7 +529,7 @@ pacman::p_load(lda, # For LDA-analysis
 ```
 
 
-The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to 
+The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
 ```{r}
 data_dtm <- tokens_stemmed %>%
   count(id, word) %>%
@@ -541,20 +538,28 @@ data_dtm <- tokens_stemmed %>%
 data_dtm
 ```
 
-
+The matrix is rather sparse (Sparsity = 100%). We can try to reduce this by deleting less often used terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .99)
 ```
 
+The Sparsity is now 97% which is less than before but still rather sparce. The number of terms went from 516 to 40. Which is a too high reduction.
+
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .999)
 ```
+
+The Sparsity is now 99% which is higher than before. The number of terms is now 313 (vs. 516). That's 3/5 of the 'original' terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .9999)
 ```
 
+The results above is just the exact the same as before we tried to remove the sparse terms. It doesn't seems like it's worth to try to reduce the sparsity vs. the reduction of the terms. Therefore  we'll just accept a high level of sparsity (100%) to keep all of the terms. 
+
+
+Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
   LDA(k = 3, method = "Gibbs",
@@ -588,6 +593,7 @@ lda_beta %>%
        x = NULL, y = expression(beta)) +
   facet_wrap(~ topic, ncol = 2, scales = "free")
 ```
+Above the top 10 terms in each LDA topic are displayed. We choose the number of three clusters since choosing a higher number results in the same words displayed in two or more clusters.
 
 It seems like cluster 1 contains some words with a tecnological character (tablet, screen, devic, app, game) while cluster 2 seems related to books and reading (kindl, read, book). The last cluster, 3, contains some positive words (love and smart) as the only cluster - besides "easi" in cluster 2
 
@@ -627,7 +633,7 @@ data_joined <- data_frame(id = word_rownames) %>%
 rating_equal_5 <- data_joined$reviews.rating == "5"
 
 model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
-                  parallel = TRUE, keep = TRUE)
+                  parallel = TRUE, keep = FALSE)
 
 plot(model)
 
