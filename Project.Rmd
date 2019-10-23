@@ -328,7 +328,7 @@ We tried to run a tf-idf analysis but we couldn't really say anything from the a
 
 ##Sentiment analysis
 
- Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. Hereafter, we will analyzie the data using the afinn lexicon, which gives every word a score between -5 and 5. 
+ Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. 
 
 ###General analysis
 
@@ -410,7 +410,7 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 , y = "Overall Sentiment")
 ```
 
-What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how the 
+What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how they distribute. First we will find the mean score for all five rating.
 
 ```{r}
 n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
@@ -425,9 +425,13 @@ n5 <- tokens_stemmed %>% filter(reviews.rating == 5)
 s5 <- tokens_stemmed_bing$overall_sentiment[5] / count(n5)
 ```
 
+Then we will combine the five mean values in a matrix.
+
 ```{r}
 x <- c(s1,s2,s3,s4,s5)
 ```
+
+And then plot the values.
 
 ```{r}
 ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
@@ -435,8 +439,10 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 , y = "Overall Sentiment")
 ```
 
+The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
 
 ###Afinn
+Now, we will analyzie the data using the afinn lexicon, which gives every word a score between -5 and 5. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating.
 
 ```{r, include=FALSE}
 # get_sentiments("afinn") # used to download afinn package
@@ -447,10 +453,13 @@ sentiment_afinn <- tokens_stemmed %>%
   arrange(sentiment)
 ```
 
+And now we can plot it. Th large numbers are even larger compared to the bing lexicon.
+
 ```{r}
 sentiment_afinn
 ```
 
+And herafter we can again plot it. 
 
 ```{r}
 ggplot(sentiment_afinn,aes(x = reviews.rating, y = sentiment, 
@@ -463,51 +472,107 @@ labs(title ="Overall Sentiment by Stars",subtitle ="Reviews for Robotic Vacuums"
 labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
+What's interesting here is that all reviews, except one star rating, have a positive score. This could be because positive words have been giving a higher rating overall than negative words. Of course this could also be, because it categorizes negative words as positive words or vice versa, like "it's amazing how bad it is" may categorize "amazing" (4) as a positive word with a high value even if it used negative. 
+
+Again, it could be interesting to look at the mean scores of each rating review, because of the distribution of the review ratings.
+
+```{r}
+n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
+s1 <- sentiment_afinn$sentiment[1] / count(n1)
+n2 <- tokens_stemmed %>% filter(reviews.rating == 2)
+s2 <- sentiment_afinn$sentiment[2] / count(n2)
+n3 <- tokens_stemmed %>% filter(reviews.rating == 3)
+s3 <- sentiment_afinn$sentiment[3] / count(n3)
+n4 <- tokens_stemmed %>% filter(reviews.rating == 4)
+s4 <- sentiment_afinn$sentiment[4] / count(n4)
+n5 <- tokens_stemmed %>% filter(reviews.rating == 5)
+s5 <- sentiment_afinn$sentiment[5] / count(n5)
+```
+
+Then we will combine the five mean values in a matrix.
+
+```{r}
+x <- c(s1,s2,s3,s4,s5)
+```
+
+And then plot the values.
+
+```{r}
+ggplot(tokens_stemmed_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
+, y = "Overall Sentiment")
+```
+Here, we can see that the positive words have been giving a higher overall value than the negative reviews, which is quiet interesting. So overall, with this dictionary, five star rating have a higher number of positive minus negative words than one start rating have of the same thing. Compared to the same plot from the bing lexicon, where five star and one star was almost the same size, one star is much smaller compared to five stars in this plot. 
 
 ##LSA
+Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities.
+
+First we create a sparse document-feature matrix from the corpus. Here we turn a tidy one-term-per-document-per-row data frame into a TermDocumentMatrix from the quanteda package. 
+
 ```{r}
 #Document-feature-matrix
 data_dfm = tokens_stemmed %>% count(id, word) %>% cast_dfm(document = id, term = word, value = n)
-data_dfm
 ```
+
+Here, we have a document-feature matrix with 3306 documents (reviews) and 3542 feautures (words). 
+
+Then we fit the LSA scaling model to the dfm, where we set nd, the number of dimensions, to five. 
 
 ```{r, include=FALSE}
-data_dfm = data_dfm %>% textmodel_lsa(nd = 5)
+#LSA scaling model
+data_dfm = data_dfm %>% 
+  textmodel_lsa(nd = 10)
 ```
 
+And now we pull out the feautures and change them to a data frame. We'll start to look at the features, hence words.
+
 ```{r}
-data_lsa_loading <- data_dfm$docs %>%
+data_lsa_loading <- data_dfm$features %>%
   as.data.frame() %>%
-  rownames_to_column(var = "id") %>% 
+  rownames_to_column(var = "word") %>% 
   as_tibble()
 ```
 
+Now we can use the umap function, which stands for Uniform Manifold Approximation and Projection, a technique for dimension reduction. The function computes a manifold approximation and projection. 
+
 ```{r, include=FALSE}
-data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("id"), 
+data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("word"), 
                        n_neighbors = 15, metric = "cosine", min_dist = 0.01, scale = TRUE,
                        verbose = TRUE, n_threads = 8) 
 ```
+
+And then we transform it into a dataframe. 
+
 ```{r}
 data_lsa_umap %<>% as.data.frame()
 ```
+
+And then a transform it into a matrix and assign it a different name. The function hdbscan computes the hierarchical cluster tree, where minPts is the minimum size of the clusters. We are dealing with 3542, so a minimum could be 200 points. 
 
 ```{r}
 data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 100)
 ```
 
+And now we can plot the features, here in a two dimensional plot. Here it's clusters after the function clutser for the hbdscan and it assigns a prob for each data point, which is a probability of a data point within its cluster, which runs from 0 to 1.  
 
 ```{r}
 x = data_lsa_umap %>% 
   bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
             prob = data_lsa_hdbscan$membership_prob) %>%
   ggplot(aes(x = V1, y = V2, col = cluster)) + 
-  geom_point(aes(alpha = prob), shape = 21) 
+  geom_point(aes(alpha = prob), shape = 21)
 
 ggplotly(x)
 ```
 
+And now we run a table to see how many feautures are in each cluster.
 
+```{r}
+table(data_lsa_hdbscan$cluster)
+```
+Here we can see the interactive plot for the features and how they cluster together. 
 
+Here, there's three different clusters and 25 outliers. One of the clusters is quiet big and have 3042 out of the 3542 features. The others are smaller and there's 25 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 100 features, but the function only makes three clusters. 
 
 ## LDA
 
