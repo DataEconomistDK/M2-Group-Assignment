@@ -70,7 +70,8 @@ pacman::p_load(knitr, # For knitr to html
                quanteda,
                uwot,
                dbscan,
-               plotly
+               plotly,
+               rsample
                )
 
 # I set a seed for reproduciability
@@ -103,7 +104,7 @@ data_clean <- data_raw %>%
   mutate(reviews.text = reviews.text %>% str_to_lower())
 ```
 
-We here want to primarily work with tidy text, where there is one token per row. This is now created below. 
+We here want to primarily work with tidy text, where there is one token per row. This is now created below and some additional cleaning are done, which is easier to do with the tokens directly. 
 
 
 ```{r}
@@ -589,6 +590,9 @@ It seems like cluster 1 contains some words with a tecnological character (table
 
 # Machine learning
 
+```{r}
+
+```
 
 
 
