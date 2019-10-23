@@ -576,15 +576,13 @@ lda_beta %>%
 It seems like cluster 1 contains some words with a tecnological character (tablet, screen, devic, app, game) while cluster 2 seems related to books and reading (kindl, read, book). The last cluster, 3, contains some positive words (love and smart) as the only cluster - besides "easi" in cluster 2
 
 
+
+
+
 ```{r}
-
+top_topics %>%
+  count(topic)
 ```
-
-```{r}
-
-```
-
-
 
 
 
