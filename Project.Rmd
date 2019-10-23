@@ -514,7 +514,7 @@ pacman::p_load(lda, # For LDA-analysis
 ```
 
 
-The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to 
+The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
 ```{r}
 data_dtm <- tokens_stemmed %>%
   count(id, word) %>%
@@ -523,20 +523,28 @@ data_dtm <- tokens_stemmed %>%
 data_dtm
 ```
 
-
+The matrix is rather sparse (Sparsity = 100%). We can try to reduce this by deleting less often used terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .99)
 ```
 
+The Sparsity is now 97% which is less than before but still rather sparce. The number of terms went from 516 to 40. Which is a too high reduction.
+
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .999)
 ```
+
+The Sparsity is now 99% which is higher than before. The number of terms is now 313 (vs. 516). That's 3/5 of the 'original' terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .9999)
 ```
 
+The results above is just the exact the same as before we tried to remove the sparse terms. It doesn't seems like it's worth to try to reduce the sparsity vs. the reduction of the terms. Therefore  we'll just accept a high level of sparsity (100%) to keep all of the terms. 
+
+
+Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
   LDA(k = 3, method = "Gibbs",
@@ -570,6 +578,7 @@ lda_beta %>%
        x = NULL, y = expression(beta)) +
   facet_wrap(~ topic, ncol = 2, scales = "free")
 ```
+Above the top 10 terms in each LDA topic are displayed. We choose the number of three clusters since choosing a higher number results in the same words displayed in two or more clusters.
 
 It seems like cluster 1 contains some words with a tecnological character (tablet, screen, devic, app, game) while cluster 2 seems related to books and reading (kindl, read, book). The last cluster, 3, contains some positive words (love and smart) as the only cluster - besides "easi" in cluster 2
 
