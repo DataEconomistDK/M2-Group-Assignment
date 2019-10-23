@@ -575,14 +575,6 @@ It seems like cluster 1 contains some words with a tecnological character (table
 
 
 
-<<<<<<< HEAD
-
-
-
-
-
-=======
->>>>>>> 2e2c860d6fb05d3e367994d5e48dac3d2194e043
 # Machine learning
 
 ```{r}
