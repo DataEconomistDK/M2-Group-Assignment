@@ -819,7 +819,7 @@ hist(classifications$probability)
 ```
 
 # Slet ovenstående
-
+Det skal slettes! 
 ```{r}
 #for at jeg kunne printe den, har jeg lige markeret med hastag
 #comment_classes %>% 
