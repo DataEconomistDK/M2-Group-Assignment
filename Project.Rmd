@@ -829,15 +829,15 @@ hist(classifications$probability)
 ```{r}
 ############## Denne del fungerer ikke endnu Mathias.
 
-comment_classes %>%
-  mutate(
-    prediction = case_when(
-      probability > 0.5 ~ "Pride and Prejudice",
-      TRUE ~ "The War of the Worlds"
-    ),
-    prediction = as.factor(prediction)
-  ) %>%
-  conf_mat(reviews.rating, prediction)
+#comment_classes %>%
+  #mutate(
+    #prediction = case_when(
+      #probability > 0.5 ~ "Pride and Prejudice",
+      #TRUE ~ "The War of the Worlds"
+    #),
+    #prediction = as.factor(prediction)
+  #) %>%
+  #conf_mat(reviews.rating, prediction)
 ```
 ```{r}
 res <- classifications %>% 
@@ -860,9 +860,9 @@ ran <- table(res$reviews.rating, sample(c(1, 2, 3, 4, 5), nrow(res), replace = T
 result
 ran
 
-kable(cbind(result,ran)) %>% kable_styling(c("bordered","condensed"), full_width = F) %>% 
-  add_header_above(c("Class"=1,"Elastic Net" = 3, "Random Assignment" = 3)) %>% 
-  add_header_above(c("Confusion Matrices" = 7))
+#kable(cbind(result,ran)) %>% kable_styling(c("bordered","condensed"), full_width = F) %>% 
+#  add_header_above(c("Class"=1,"Elastic Net" = 3, "Random Assignment" = 3)) %>% 
+#  add_header_above(c("Confusion Matrices" = 7))
 
 ```
 
