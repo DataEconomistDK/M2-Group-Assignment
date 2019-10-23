@@ -261,46 +261,47 @@ word_cors %>%
 
 
 # NLP
+
+In this section we will analyze the xxxx.
+
+## Data preprocessing
+
+Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  We will start to look at the top 100 words. 
+
 ```{r}
 tokens_clean %>% count(word, sort=TRUE) %>% head(100)
 ```
 
-
-
-
+Before looking for our own stopwords, we will move all stopwords build into the package, tidytext, called SMART. 
 
 ```{r}
 tokens_clean %<>%
   anti_join(stop_words)
 ```
 
-
+After that we will look throuh the tokens_clean dataframe again and remove our own stopwords, where we decied to remove these five stopwords. 
 
 ```{r}
 own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
                         lexicon = "OWN")
 ```
 
-
-
+Now we will remove out own stopwords.
 
 ```{r}
-tokens_clean %<>% 
-  anti_join(stop_words %>% 
-              bind_rows(own_stopwords), by = "word") 
+tokens_clean %>% 
+  anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
+
 ```
 
-
-
+Now we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
 
 ```{r}
 tokens_stemmed <- tokens_clean %<>%
-  add_count(id, word, name = "nword") %>%
-  add_count(id, name = "ntweet") %>%
-  filter(nword > 1 & ntweet > 1) %>%
-    select(-nword, -ntweet)
-```
+  add_count(id, name = "ndoc") %>%
+  filter(ndoc > 5) %>% select(-ndoc)
 
+```
 
 
 
@@ -309,18 +310,11 @@ tokens_stemmed <- tokens_stemmed %>%
   mutate(word = wordStem(word))
 ```
 
-
-
+After doing the lemmazation, we will now again look at the top words and again plot them.
 
 ```{r}
 topwords <- tokens_stemmed %>% count(word, sort=TRUE)
-```
 
-
-
-
-
-```{r}
 topwords %>%
   top_n(20, n) %>%
   ggplot(aes(x = word %>% fct_reorder(n), y = n)) +
@@ -331,19 +325,7 @@ topwords %>%
        y = "Top Words")
 ```
 
-
-
-
-
-```{r}
-topwords %>%
-  ggplot(aes(x = n)) + 
-  geom_histogram()
-```
-
-
-
-
+And now we will look at a wordcloud for the top 50 words. So pretty. 
 
 ```{r}
 wordcloud(topwords$word, topwords$n, random.order = FALSE, 
@@ -351,12 +333,17 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE,
 ```
 
 
-
-
 ## TF-IDF
-We tried to run a tf-idf analysis but we couldn't really say anything from the analysis, because there's a lot of documents. If we were analyzing a number of books, the analyses may have made sence. 
+Up untill now, equal weight have been given to all words, but some are more rare than others. Term frequency–inverse document frequency or just tf-idf, is a way to analyze how important a word is to a document in a corpus:
+
+$$\text{tf-idf}(t, d) = \text{tf}(t, d) \times \text{idf}(t)$$
+Here tf is the term-frequency and idf is the inverse document-frequency, a coefficient which is larger whenever the particular term is found in a lesser number of documents. 
+
+We tried to run a tf-idf analysis but we couldn't really say anything from the analysis, probably because there's a lot of documents. Every person has their own dictionary and a lot of words may appear very rare, and therefor they may be giving a high idf coefficient, which is why their tf-idf is high. If we were analyzing a number of books, the analyses may have made more sense. 
 
 ##Sentiment analysis
+
+In this section, we will be doing two sentiment analysis. Sentiment analysis is 
 
 ###Bing
 
@@ -484,7 +471,7 @@ data_lsa_umap %<>% as.data.frame()
 ```
 
 ```{r}
-data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 50)
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 100)
 ```
 
 
@@ -510,7 +497,7 @@ pacman::p_load(lda, # For LDA-analysis
 ```
 
 
-The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to 
+The topicmodels package requires a document-term matrix as input: By using the function cast_dtm og tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
 ```{r}
 data_dtm <- tokens_stemmed %>%
   count(id, word) %>%
@@ -519,20 +506,28 @@ data_dtm <- tokens_stemmed %>%
 data_dtm
 ```
 
-
+The matrix is rather sparse (Sparsity = 100%). We can try to reduce this by deleting less often used terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .99)
 ```
 
+The Sparsity is now 97% which is less than before but still rather sparce. The number of terms went from 516 to 40. Which is a too high reduction.
+
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .999)
 ```
+
+The Sparsity is now 99% which is higher than before. The number of terms is now 313 (vs. 516). That's 3/5 of the 'original' terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .9999)
 ```
 
+The results above is just the exact the same as before we tried to remove the sparse terms. It doesn't seems like it's worth to try to reduce the sparsity vs. the reduction of the terms. Therefore  we'll just accept a high level of sparsity (100%) to keep all of the terms. 
+
+
+Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
   LDA(k = 3, method = "Gibbs",
@@ -566,6 +561,7 @@ lda_beta %>%
        x = NULL, y = expression(beta)) +
   facet_wrap(~ topic, ncol = 2, scales = "free")
 ```
+Above the top 10 terms in each LDA topic are displayed. We choose the number of three clusters since choosing a higher number results in the same words displayed in two or more clusters.
 
 It seems like cluster 1 contains some words with a tecnological character (tablet, screen, devic, app, game) while cluster 2 seems related to books and reading (kindl, read, book). The last cluster, 3, contains some positive words (love and smart) as the only cluster - besides "easi" in cluster 2
 
