@@ -530,7 +530,7 @@ The results above is just the exact the same as before we tried to remove the sp
 Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
-  LDA(k = 3, method = "Gibbs",
+  LDA(k = 5, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
