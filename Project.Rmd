@@ -269,6 +269,8 @@ word_cors %>%
 
 # NLP
 
+In this section we will analyze the xxxx.
+
 ## Data preprocessing
 
 Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  We will start to look at the top 100 words. 
@@ -294,9 +296,9 @@ own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"),
 Now we will remove out own stopwords.
 
 ```{r}
-tokens_clean %<>% 
-  anti_join(stop_words %>% 
-              bind_rows(own_stopwords), by = "word") 
+tokens_clean %>% 
+  anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
+
 ```
 
 Now we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
@@ -315,18 +317,11 @@ tokens_stemmed <- tokens_stemmed %>%
   mutate(word = wordStem(word))
 ```
 
-
-
+After doing the lemmazation, we will now again look at the top words and again plot them.
 
 ```{r}
 topwords <- tokens_stemmed %>% count(word, sort=TRUE)
-```
 
-
-
-
-
-```{r}
 topwords %>%
   top_n(20, n) %>%
   ggplot(aes(x = word %>% fct_reorder(n), y = n)) +
@@ -337,13 +332,7 @@ topwords %>%
        y = "Top Words")
 ```
 
-
-
-
-
-
-
-
+And now we will look at a wordcloud for the top 50 words. So pretty. 
 
 ```{r}
 wordcloud(topwords$word, topwords$n, random.order = FALSE, 
@@ -351,12 +340,17 @@ wordcloud(topwords$word, topwords$n, random.order = FALSE,
 ```
 
 
-
-
 ## TF-IDF
-We tried to run a tf-idf analysis but we couldn't really say anything from the analysis, because there's a lot of documents. If we were analyzing a number of books, the analyses may have made sence. 
+Up untill now, equal weight have been given to all words, but some are more rare than others. Term frequency–inverse document frequency or just tf-idf, is a way to analyze how important a word is to a document in a corpus:
+
+$$\text{tf-idf}(t, d) = \text{tf}(t, d) \times \text{idf}(t)$$
+Here tf is the term-frequency and idf is the inverse document-frequency, a coefficient which is larger whenever the particular term is found in a lesser number of documents. 
+
+We tried to run a tf-idf analysis but we couldn't really say anything from the analysis, probably because there's a lot of documents. Every person has their own dictionary and a lot of words may appear very rare, and therefor they may be giving a high idf coefficient, which is why their tf-idf is high. If we were analyzing a number of books, the analyses may have made more sense. 
 
 ##Sentiment analysis
+
+In this section, we will be doing two sentiment analysis. Sentiment analysis is 
 
 ###Bing
 
