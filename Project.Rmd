@@ -618,7 +618,7 @@ dim(sparse_words)
 
 In our training set, we have 3750 observertions and the 3677 features, which is the different tokens. We could also cbind other columns such as numeric data into the matrix here, such as sentiment numbers. 
 
-We now build a dataframe with the response variable. 
+We now build a dataframe with the response variable for the ratings. 
 
 ```{r}
 word_rownames <- as.integer(rownames(sparse_words))
