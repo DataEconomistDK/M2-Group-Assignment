@@ -115,7 +115,7 @@ We here want to primarily work with tidy text, where there is one token per row.
 
 ```{r}
 tokens_raw <- unnest_tokens(data_clean, word, reviews.text)
-tokens_clean <- tokens_raw # extra filtering at some point? 
+tokens_clean <- tokens_raw 
 
 ```
 We now have 153.085 tokens, in their each seperate rows. 
@@ -124,18 +124,37 @@ We now have 153.085 tokens, in their each seperate rows.
 
 # Network analysis
 
-In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. These are now created. Then the most common bigrams are displayed. 
+In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. 
 
+## Preprocessing 
 
+First we will do some lemmatization. The purpose of this is to not only analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. Lemmatization try and do so, by using detailed dictionaries which the algorithm looks trough to link a given word string back to it's root word. This is a more advanced method than stemming and should be beneficial in this report.
+
+```{r}
+#Lemmatazion
+tokens_lemma <- tokens_clean %>% 
+  mutate(word = lemmatize_words(word))
+
+reviewtext_lemma <- tokens_lemma %>% 
+  group_by(id) %>% 
+  summarize(text.review = str_c(word, collapse = " ")) %>% 
+  ungroup() %>% 
+  select(text.review) %>% 
+  as_vector()
+```
+By doing this the number of unique words are reduced from around 6000 to around 4600 words, which should prove quite beneficial. 
+
+Bigrams are now created, by unnesting the tokens. 
 
 ```{r}
 bigrams <- data_clean %>%
+  mutate(text.review = reviewtext_lemma) %>% # add the lemma cleaning
   unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
 
 bigrams$bigram[1:2]
 ```
 
-Remember that each bigram overlap, as can be seen from above, so that the first token is "the display" and the second is "display is". 
+Remember that each bigram overlap, as can be seen from above, so that the first token is "the display" and the second is "display is". Now the most common bigrams are displayed. 
 
 ```{r}
 #Counting common bigrams
@@ -144,7 +163,7 @@ bigrams %>%
 
 ```
 
-Notice the most common bigrams are: "for my", "easy to", "to use", "it is". These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new count to see the most bigrams. 
+Notice the most common bigrams are: "for my", "easy to", "to use", "it is". These are mostly stopwords, which is not very usefull for the analysis. To remove these from the bigrams, we now split the bigram into 2 columns word1 and word2, and then filter them away if either of them is a stopword. The stopwords are taken from a dictionary called stop_words. Now we make a new a new count to see the most bigrams after filtering. 
 
 
 ```{r}
@@ -162,7 +181,8 @@ bigram_counts <- bigrams_filtered %>%
 bigram_counts
 ```
 
-Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. 
+Above we can see that the most common bigrams are now mostly product names such as "kindle fire", "battery life", "amazon fire", "amazon echo" ect. We now combine the 2 columns again into a single column with the bigram, to do further analysis. This is done by using the 'tidyr' function 'unite'. The purpose is to treat the bigram as a 'term in a document'. Therefore we can look at the tf_idf values
+of bigrams and visualize them.
 
 ```{r}
 bigrams_united <- bigrams_filtered %>% 
@@ -170,7 +190,7 @@ bigrams_united <- bigrams_filtered %>%
 
 ```
 
-
+Creating the tf_idf values for the bigram:
 
 ```{r}
 bigram_tf_idf <- bigrams_united %>%
@@ -181,12 +201,16 @@ bigram_tf_idf <- bigrams_united %>%
 bigram_tf_idf
 ```
 
+#### COMMENT ON THE TF_IDF #####
 
+The interesting thing is now to visualize the relationship between all words. To this we will use the
+package igraph. Before doing this we will need to create the graph from a data frame. Where we take a 
+data frame of edges with columns for 'from', 'to'. Which is equal to n.
 
 
 ```{r}
 bigram_graph <- bigram_counts %>% 
-  filter(n > 15) %>% 
+  filter(n > 15) %>%  #Sets the combination to atleast 15
   graph_from_data_frame()
 
 
@@ -201,13 +225,17 @@ ggraph(bigram_graph, layout = "fr") +
   theme_void()
 ```
 
+The plot above, show us some details about the structure of the text. We can for example see that such 
+thing as 'son' 'wife' and 'daugther' are connected with 'loves'.
+
+#Correlation bigrams
+
+
 
 ```{r}
 #Correlation bigrams
-bigram_section <- data_clean %>% 
-  unnest_tokens(word,reviews.text) %>% 
+bigram_section <- tokens_lemma %>% 
   filter(!word %in% stop_words$word)
-bigram_section
 
 word_pairs <- bigram_section %>% 
   pairwise_count(word, id, sort = TRUE)
@@ -247,39 +275,15 @@ word_cors %>%
   filter(correlation > .275) %>% 
   graph_from_data_frame() %>% 
   ggraph(layout="fr") +
-  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = TRUE) +
   geom_node_point(color = "pink",size=3) +
   geom_node_text(aes(label = name), repel = TRUE) +
   theme_void()
 ```
 
 
-```{r}
-tokens_clean %>% 
-  count(word,sort =TRUE)
-options(max.print = 10)
-unique(tokens_clean$word)
-```
 
 
-```{r}
-unique(tokens_clean$word)
-  
-
-#Lemmatazion
-tokens_lemma <- tokens_clean %>% 
-  mutate(word = lemmatize_words(word))
-
-unique(tokens_lemma$word)
-
-
-
-#Stemmed
-tokens_stemmed <- tokens_clean %>% 
-  mutate(word = wordStem(word))
-
-unique(tokens_stemmed$word)
-```
 
 
 
@@ -461,6 +465,7 @@ bing_word_counts
 ###Afinn
 
 ```{r, include=FALSE}
+# get_sentiments("afinn") # used to download afinn package
 sentiment_afinn <- tokens_stemmed %>%
   inner_join(get_sentiments("afinn")) %>%
   group_by(reviews.rating) %>%
@@ -531,6 +536,81 @@ ggplotly(x)
 
 
 ##LDA
+
+```{r}
+pacman::p_load(lda,
+               topicmodels)
+```
+
+
+
+```{r}
+data_dtm <- tokens_stemmed %>%
+  count(id, word) %>%
+  cast_dtm(document = id, term = word, value = n, weighting = tm::weightTf)
+
+data_dtm
+```
+
+
+
+```{r}
+data_dtm %>% removeSparseTerms(sparse = .99)
+```
+
+```{r}
+data_dtm %>% removeSparseTerms(sparse = .999)
+```
+
+```{r}
+data_dtm %>% removeSparseTerms(sparse = .9999)
+```
+
+```{r}
+data_lda <- data_dtm %>%
+  LDA(k = 5, method = "Gibbs",
+      control = list(seed = 1337))
+```
+
+
+```{r}
+lda_beta <- data_lda %>%
+  tidy(matrix = "beta") %>%
+  group_by(topic) %>%
+  arrange(topic, desc(beta)) %>%
+  slice(1:10) %>%
+  ungroup()
+
+lda_beta %>% head()
+```
+
+
+```{r}
+lda_beta %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  group_by(topic, term) %>%
+  arrange(desc(beta)) %>%
+  ungroup() %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(title = "Top 10 terms in each LDA topic",
+       x = NULL, y = expression(beta)) +
+  facet_wrap(~ topic, ncol = 2, scales = "free")
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
 
 
 # Machine learning
