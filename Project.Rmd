@@ -75,7 +75,9 @@ pacman::p_load(knitr, # For knitr to html
                glmnet,
                doMC,
                broom,
-               yardstick
+               yardstick,
+               lda, # For LDA-analysis
+               topicmodels # LDA models
                )
 
 # I set a seed for reproduciability
@@ -551,7 +553,7 @@ The results above is just the exact the same as before we tried to remove the sp
 Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
-  LDA(k = 3, method = "Gibbs",
+  LDA(k = 2, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
