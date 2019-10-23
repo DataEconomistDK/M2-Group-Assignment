@@ -390,11 +390,11 @@ bing_word_counts <- tokens_stemmed %>%
 
 bing_word_counts
 ```
-What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not being included 
+What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not in out data not included in the lexicon, or there may be a lot of neutral words.
 
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative.
 
-```{r}
+```{r, include=FALSE}
 tokens_stemmed_bing <- tokens_stemmed %>%
   inner_join(get_sentiments("bing")) %>%
   count(reviews.rating, sentiment) %>%
@@ -410,19 +410,8 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 , y = "Overall Sentiment")
 ```
 
-What's interesting is that rating 5 is very 
+What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how the 
 
-
-
-```{r}
-n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
-sentiment_1 <- tokens_stemmed_bing$overall_sentiment
-sentiment_1
-
-
--51, -1, 21, 389, 2199
-
-```
 ```{r}
 n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
 s1 <- tokens_stemmed_bing$overall_sentiment[1] / count(n1)
@@ -637,7 +626,7 @@ model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
 
 plot(model)
 
-plot(model$glmnet.fit,xvar="dev",label=FALSE)
+plot(model$glmnet.fit)
 ```
 
 
@@ -654,7 +643,7 @@ coefs %>%
   ggplot(aes(fct_reorder(term, estimate),estimate, fill =estimate > 0)) +
   geom_col(alpha = 0.8, show.legend = FALSE) + 
   coord_flip() + 
-  labs(x = NULL, title = "Coefficients that increase/decrease probability the most")
+  labs(x = NULL, title = "SDS ER LIVET", subtitle = "OG I VED DET")
 ```
 
 
