@@ -139,7 +139,6 @@ Bigrams are now created, by unnesting the tokens.
 
 ```{r}
 bigrams <- data_clean %>%
-  mutate(text.review = reviewtext_lemma) %>% # add the lemma cleaning
   unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
 
 bigrams$bigram[1:2]
@@ -204,7 +203,7 @@ Check up on this!
 
 ```{r}
 #Correlation bigrams
-bigram_section <- tokens_lemma %>% 
+bigram_section <- tokens_clean %>% 
   filter(!word %in% stop_words$word)
 
 word_pairs <- bigram_section %>% 
@@ -576,10 +575,7 @@ It seems like cluster 1 contains some words with a tecnological character (table
 
 
 
-```{r}
-top_topics %>%
-  count(topic)
-```
+
 
 
 
