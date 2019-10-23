@@ -195,22 +195,15 @@ The plot above, give us some insights about the connection of words in the revie
 
 We see many small connections such as customer -> service, sound -> quality, black -> friday and ect. Then we also have a bigger cluster where love is one of the key words. Many words such as kid, daughter, son, wife ect. point in the direction of love, and then outgoing edges from love is play, watch, alexa. Creating sentences such as "wife love alexa" or "kid love play". So first we have the person, then the sentiment word love, and then the action they do or what they love. We see that amazon is a central word with many outgoing connections, as many things are called "amazon prime", "amazon account" ect. Other key nodes are the product names such as "fire", "kindle", "hue". 
 
-
 ## Correlation 
+
+We can also look at correlation among words, which indicates how often they appear together relative to how often they appear separately. We here use the phi coefficient, which is a measure for binary correlation. So how often does both words appear in the document or neither do, versus one appears without the other. The can be done with the pairwise_cor command from the tidytext package. The calculation is done with each review being the document. 
 
 ```{r}
 #Correlation bigrams
 bigram_section <- tokens_clean %>% 
   filter(!word %in% stop_words$word)
 
-word_pairs <- bigram_section %>% 
-  pairwise_count(word, id, sort = TRUE)
-
-word_pairs
-```
-
-
-```{r}
 word_cors <- bigram_section %>% 
   group_by(word) %>% 
   filter(n()>= 20) %>% 
@@ -219,24 +212,10 @@ word_cors <- bigram_section %>%
 word_cors
 ```
 
-Maybe choose other names
+The words come in double pairs "friday black" and "black friday". We see these have a very high correlation at around 0.8, meaning they occur 80% of time in the same review text. The words with the highest correlation might not be the most meaningfull, such as "doorbeel ring" but some might show new insights. We now this in a network graph. As correlation is undirected there is no arrows. The colour of the edge shows the degree of correlation. The plot only shows pairs with a correlation above 27,5%. 
 
 ```{r}
-word_cors %>% 
-  filter(item1 %in% c("kindle","fire")) %>% 
-  group_by(item1) %>% 
-  top_n(6) %>% 
-  ungroup() %>% 
-  mutate(item2 = reorder(item2, correlation)) %>% 
-  ggplot(aes(item2, correlation)) +
-  geom_bar(stat = "identity") +
-  facet_wrap(~ item1, scales = "free") +
-  coord_flip()
-```
-
-Maybe add colour scale. 
-
-```{r}
+set.seed(123)
 word_cors %>% 
   filter(correlation > .275) %>% 
   graph_from_data_frame() %>% 
@@ -247,16 +226,7 @@ word_cors %>%
   theme_void()
 ```
 
-
-
-
-
-
-
-
-
-
-
+From the previus bigram plot, the correlation plot is not nearly as connected. The highest amount of connections is 4, and the most frequent is 2. In this plot words such as love, that was very important before is now gone. This is because the word love just occurs very often on itself, and can be used together with many words, and therefore does not have high correlation with any specific words. As before we also have connections such as "amazon prime", "hue bulb", which are words that almost always occur together. 
 
 
 
@@ -390,11 +360,11 @@ bing_word_counts <- tokens_stemmed %>%
 
 bing_word_counts
 ```
-What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not being included 
+What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not in out data not included in the lexicon, or there may be a lot of neutral words.
 
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative.
 
-```{r}
+```{r, include=FALSE}
 tokens_stemmed_bing <- tokens_stemmed %>%
   inner_join(get_sentiments("bing")) %>%
   count(reviews.rating, sentiment) %>%
@@ -410,19 +380,8 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 , y = "Overall Sentiment")
 ```
 
-What's interesting is that rating 5 is very 
+What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how the 
 
-
-
-```{r}
-n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
-sentiment_1 <- tokens_stemmed_bing$overall_sentiment
-sentiment_1
-
-
--51, -1, 21, 389, 2199
-
-```
 ```{r}
 n1 <- tokens_stemmed %>% filter(reviews.rating == 1)
 s1 <- tokens_stemmed_bing$overall_sentiment[1] / count(n1)
@@ -562,7 +521,7 @@ The results above is just the exact the same as before we tried to remove the sp
 Next we perfome a LDA. We're using the "Gibbs" sampling as method.
 ```{r}
 data_lda <- data_dtm %>%
-  LDA(k = 3, method = "Gibbs",
+  LDA(k = 5, method = "Gibbs",
       control = list(seed = 1337))
 ```
 
