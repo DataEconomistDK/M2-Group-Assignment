@@ -71,7 +71,11 @@ pacman::p_load(knitr, # For knitr to html
                uwot,
                dbscan,
                plotly,
-               rsample
+               rsample,
+               glmnet,
+               doMC,
+               broom,
+               yardstick
                )
 
 # I set a seed for reproduciability
@@ -589,11 +593,74 @@ lda_beta %>%
 # Machine learning
 
 ```{r}
+data_split <- data_clean %>% 
+  select(id) %>% 
+  initial_split()
 
+train_data <- training(data_split)
+test_data <- testing(data_split)
+```
+
+Transforming training data to a sparse Matrix
+```{r}
+sparse_words <- tokens_clean %>% 
+  count(id,word) %>% 
+  inner_join(train_data) %>% 
+  cast_sparse(id,word)
+
+class(sparse_words)
+```
+
+```{r}
+dim(sparse_words)
+
+word_rownames <- as.integer(rownames(sparse_words))
+
+
+data_joined <- data_frame(id = word_rownames) %>% 
+  left_join(data_clean %>% select(id, reviews.rating))
+
+rating_equal_5 <- data_joined$reviews.rating == "5"
+
+model <-cv.glmnet(sparse_words,rating_equal_5, family="binomial",
+                  parallel = TRUE, keep = TRUE)
+
+plot(model)
+
+plot(model$glmnet.fit)
 ```
 
 
 
+```{r}
+coefs <- model$glmnet.fit %>% 
+  tidy() %>% 
+  filter(lambda == model$lambda.1se)
 
+coefs %>% 
+  group_by(estimate > 0) %>% 
+  top_n(10, abs(estimate)) %>% 
+  ungroup() %>% 
+  ggplot(aes(fct_reorder(term, estimate),estimate, fill =estimate > 0)) +
+  geom_col(alpha = 0.8, show.legend = FALSE) + 
+  coord_flip() + 
+  labs(x = NULL, title = "SDS ER LIVET", subtitle = "OG I VED DET")
+```
+
+
+```{r}
+intercept <- coefs %>%
+  filter(term == "(Intercept)") %>%
+  pull(estimate)
+
+classifications <- tokens_clean %>%
+  inner_join(test_data) %>%
+  inner_join(coefs, by = c("word" = "term")) %>%
+  group_by(id) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(intercept + score))
+
+classifications
+```
 
 
