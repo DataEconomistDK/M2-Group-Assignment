@@ -782,6 +782,7 @@ hist(classifications$probability)
 ```
 
 
+
 ```{r}
 comment_classes <- classifications %>% 
   left_join(data_clean %>% select(reviews.rating, id),by = "id") %>% 
