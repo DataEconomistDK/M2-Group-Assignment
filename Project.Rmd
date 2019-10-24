@@ -1,5 +1,5 @@
 ---
-title: "M2-Project-Amazon"
+title: "M2 Project, Amazon"
 date: "10/24/2019"
 output:
   html_document:
@@ -248,16 +248,11 @@ From the previus bigram plot, the correlation plot is not nearly as connected. T
 
 
 # NLP
-In this section we will analyze the data using Natural Language Processing. Here we will gain insight in the data set by extracting and identifing patterns. We will start by doing some data preprocessing before we start our analysis. Then we will so a sentiment analysis, where we analysis the words and whether they're positive or negative. Then we will do a LSA analysis, where we will apply dimentionality reductions and cluster the data to look for laternt patterns for the words and documents. And then we will do a LDA analysis to try to seperate the data into topics to look for patterns for the words.
+In this section we will analyze the data using Natural Language Processing. Here we will gain insight in the dataset by extracting and identifing patterns. We will start by doing some data preprocessing before we start our analysis. Then we will do a sentiment analysis, where we analysis the words and whether they're positive or negative. Next we will do a LSA analysis, where we will apply dimentionality reductions and cluster the data to look for latent patterns for the words and documents. And then we will do a LDA analysis to try to seperate the data into topics to look for patterns for the words.
 
 ## Data preprocessing
 
-Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  Words have also been through a lemmatazation.
-We will start to look at the top 100 words. 
-
-```{r}
-tokens_clean %>% count(word, sort=TRUE) %>% head(100)
-```
+Up until now special characters, numbers and special letter have been removed and the tokens have been unnested.  Words have also been through a lemmatazation. 
 
 Before looking for our own stopwords, we will move all stopwords build into the package, tidytext, called SMART. 
 
@@ -265,14 +260,14 @@ Before looking for our own stopwords, we will move all stopwords build into the 
 tokens_nlp <- tokens_clean %>% anti_join(stop_words)
 ```
 
-After that we will look throuh the tokens_clean dataframe again and remove our own stopwords, where we decied to remove these five stopwords. 
+After that we will look through the tokens_clean dataframe again and remove our own stopwords, where we decied to remove five stopwords ("im", "ive", "dont", "doesnt", "didnt"). 
 
 ```{r}
 own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
                         lexicon = "OWN")
 ```
 
-Now we will remove out own stopwords. Afterwards we will filter first for ndoc, which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
+Now we will remove out own stopwords. Afterwards we will filter first for "ndoc", which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
 
 ```{r}
 tokens_nlp <- tokens_clean %>% 
