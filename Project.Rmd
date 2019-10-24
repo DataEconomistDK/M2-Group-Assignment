@@ -632,35 +632,28 @@ Above the top 10 terms in each LDA topic are displayed. We choose the number of 
 
 It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
 
+# Supervised machine learning
+In this section we will analyse whether we can predict if the review is good, her categorized as rating 4 or 5. We will apply supervised machine learning to do so and create a binary logistic model. 
 
-# Machine learning
-
-
-Introduction: We want to predict if the rating is either 4 or 5 stars.
-
-
-We split the data in a train and test dataset, using the proportions 3/4, which is standard in the "initial_split" command. 
-
+We start by splitting out data_clean into test and training data. Out test data consist of 25 percent, here 1250 reviews, and our training data consist of 75 percent, here 3750 reviews.
 
 ```{r}
 split = data_clean %>% select(id, reviews.rating) %>% initial_split()
 train_data = training(split)
 test_data = testing(split)
-
-
-table(test_data$reviews.rating)
-
 ```
 
+After that we want to transform our training data into a sparse matrix to use for our machine learning algorithm. Transforming training data to a sparse matrix, so a given cell is either empty or indicating the frequency it occurs by in a given document. 
 
-Maybe we want to filter away infrequent words here to get fewer features. 
-Transforming training data to a sparse Matrix, so a given cell is either empty or indicating the frequency it occurs by in a given document. 
 ```{r}
 sparse_words = tokens_clean %>% count(id, word) %>% inner_join(train_data) %>% cast_sparse(id, word, n)
+
+dim(sparse_words)
 ```
 
-Maybe we want to filter away infrequent words here to get fewer features. 
-Transforming training data to a sparse Matrix, so a given cell is either empty or indicating the frequency it occurs by in a given document. 
+In our training set, we have 3750 reviews and the 3625 features, which is the different tokens. We could also cbind other columns such as numeric data into the matrix here, such as sentiment numbers. 
+
+We now build a dataframe with the response variable for the ratings. 
 
 ```{r}
 word_rownames = as.integer(rownames(sparse_words))
@@ -687,8 +680,7 @@ log_model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, interce
 ```{r}
 model = log_model
 coefs = model$glmnet.fit %>%
-  tidy() %>%
-  filter(lambda == model$lambda.1se)
+  tidy()
 
 classifications = tokens_clean %>%
   inner_join(test_data) %>%
@@ -697,13 +689,11 @@ classifications = tokens_clean %>%
   summarize(score = sum(estimate)) %>%
   mutate(probability = plogis(score)) %>% 
   left_join(data_clean, by="id")
-classifications
 ```
 
 ```{r}
 a = table(classifications$reviews.rating == 1, classifications$probability > 0.7)
 a
-sum(a)
 ```
 
 ```{r}
