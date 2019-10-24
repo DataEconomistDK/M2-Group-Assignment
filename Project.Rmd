@@ -304,13 +304,20 @@ Sentiment analysis refers to a use of text analysis to extract and identify subj
 
 ### General analysis
 
-Before doing the sentiment analysis, we will quickly look a the distribution of the review ratings.
+Before doing the sentiment analysis, we will quickly look a the distribution of the review ratings. First we run a summary.
 
 ```{r}
 summary(tokens_nlp$reviews.rating)
 ```
 
-Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.533 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1134 one-star review rating, 584 two-star review rating, 3028 three-star review rating, 12070 four-star review rating and 30383 five-star review rating. 
+Then we run a table.
+
+```{r}
+table(tokens_nlp$reviews.rating)
+```
+
+
+Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.533 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1152 one-star review rating, 627 two-star review rating, 2210 three-star review rating, 13509 four-star review rating and 34746 five-star review rating. 
 
 ### Bing
 
@@ -498,7 +505,7 @@ table(data_lsa_hdbscan$cluster)
 ```
 Here we can see the interactive plot for the features and how they cluster together. 
 
-Here, there's two different clusters and 91 outliers. One of the clusters is quiet big and have 3240 out of the 3542 features. The others are smaller and there's 91 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 100 features, but the function only makes two clusters. Unfortunately, we will not go any further regarding which words are in which clusters.
+Here, there's two different clusters and a lot of outliers. One of the clusters is quiet big and have 1536 out of the 3542 features. The others are smaller and there's 91 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 200 features, but the function only makes two clusters. Unfortunately, we will not go any further regarding which words are in which clusters.
 
 
 ### Document analysis
@@ -555,9 +562,7 @@ And now we run a table to see how many feautures are in each cluster.
 table(data_lsa_hdbscan$cluster)
 ```
 
-Here the documents cluster differently than the features and they are much more spread out, even when the minimum points are the same. There's also more outliers compared to the last plot. Here there's five clusters, which could be the five different rating the documents have clustered after, but it's latent features. 
-
-
+Here the documents cluster differently than the features and they are much more spread out, even when the minimum points are the same. There's almost as many outliers compared to the last plot. Here there's six clusters, which could be the five different rating the documents have clustered after, but it's latent features. 
 
 ## LDA
 
@@ -633,13 +638,13 @@ Above the top 10 terms in each LDA topic are displayed. We choose the number of 
 It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
 
 
-
 # Supervised machine learning
-In this section we will analyse whether we can predict if the review is good, here categorized as rating 4 or 5. We will apply supervised machine learning to do so and create a binary logistic model. 
+In this section we will analyse whether we can predict if the review is good, here categorized as rating 4 or 5. We will apply supervised machine learning to do so and create a binary logistic model, which can take the value 1 for rating 4 or 5 or value 0 for rating 1, 2 or 3. 
 
 We start by splitting out data_clean into test and training data. Out test data consist of 25 percent, here 1250 reviews, and our training data consist of 75 percent, here 3750 reviews.
 
 ```{r}
+set.seed(123)
 split = data_clean %>% select(id, reviews.rating) %>% initial_split()
 train_data = training(split)
 test_data = testing(split)
@@ -648,6 +653,7 @@ test_data = testing(split)
 After that we want to transform our training data into a sparse matrix to use for our machine learning algorithm. Transforming training data to a sparse matrix, so a given cell is either empty or indicating the frequency it occurs by in a given document. 
 
 ```{r}
+set.seed(123)
 sparse_words = tokens_clean %>% count(id, word) %>% inner_join(train_data) %>% cast_sparse(id, word, n)
 
 dim(sparse_words)
@@ -658,6 +664,7 @@ In our training set, we have 3750 reviews and the 3625 features, which is the di
 We now build a dataframe with the response variable for the ratings. 
 
 ```{r}
+set.seed(123)
 word_rownames = as.integer(rownames(sparse_words))
 
 data_clean$reviews.rating[data_clean$reviews.rating == 1] <- 0
@@ -669,10 +676,10 @@ data_clean$reviews.rating[data_clean$reviews.rating == 5] <- 1
 joined = data_frame(id = word_rownames) %>% left_join(data_clean %>% select(id, reviews.rating))
 ```
 
-Now we want to train our model. To do this we will be using glmnet which can handle parallel processing, this make it possible for training the model with cross validation.
-
+Now we want to train our model. To do this we will be using glmnet which can handle parallel processing, this make it possible for training the model with cross validation. We run a binominal model without an intercept, where sparse_words is our x and reviews.rating in joined equal to 1 is our y. 
 
 ```{r}
+set.seed(123)
 j = joined$reviews.rating == 1
 model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, intercept = FALSE
 )
@@ -682,6 +689,7 @@ The model is made, now we want to dig more deeply into the understading of our m
 
 
 ```{r}
+set.seed(123)
 coefs <- model$glmnet.fit %>%
   tidy() %>%
   filter(lambda == model$lambda.1se)
@@ -692,17 +700,19 @@ coefs %>%
   ungroup() %>%
   ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
   geom_col(alpha = 0.8, show.legend = FALSE) +
-  coord_flip() + geom_hline(aes(yintercept=0)) +
+  coord_flip() +
   labs(
     x = NULL,
     title = "Coefficients that increase/decrease probability the most"
   )
 ```
 
-The graph above gives an overview, over which coefficients that either increase or decrease the probalitiy of the models prediction of the rating.
-Further more we want to investigate the confusion matrix of the model. Here we want to make a classification, which will tell how many predictions were true.
+The graph above gives an overview, over which coefficients that either increase or decrease the probalitiy of the models prediction of the rating. Here we can see that 'terrible' and 'defective' have a negative effect on the probability that the rating is either 4 or 5 stars. On the other hand 'love' and 'great' will increase the probability that the review is either a 4 or 5 star rating. 
+
+And now we want to evaluate our test data. Furthermore we want to investigate the confusion matrix of the model. Here we want to make a classification, which will tell how many predictions were true.
 
 ```{r}
+set.seed(123)
 classifications = tokens_clean %>%
   inner_join(test_data) %>%
   inner_join(coefs, by = c("word" = "term")) %>%
@@ -711,15 +721,29 @@ classifications = tokens_clean %>%
   mutate(probability = plogis(score)) %>% 
   left_join(data_clean, by="id")
 
+classifications
+```
+
+And here we are running the confusion matrix. The probability for the classification is the proabbility that the review is a 4 or 5 star rating, and we set the probability to 0.5, which is the middle between the two. 
+
+```{r}
 confusion_matrix = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
 confusion_matrix
 ```
 
-As the result shows us. The model could predict 1154 true out the original 1250 observations. To check the accuarcy, we choose to use the function yardstick to calculate it:
+
+As the result shows us. The model could predict 1154 true out the original 1250 observations. Now we want to check the accuracy.  
+
+To check the accuarcy, we choose to use the package 'yardstick' to calculate it:
 
 ```{r}
 yardstick::accuracy(confusion_matrix)
 ```
 
-As the above result shows, the model could predict 93% of the 4 and 5 star rated reviews.
+As the above result shows, the model could predict 93 percent of the 4 and 5 star rated reviews, which is pretty good. The data set is a bit biased, as the group 4 and 5 stars is a lot bigger than 1, 2 and 3 stars and therefor you can question the accuracy and whether it would predict as well if the two groups would have the equal size.  
 
+# Conclusion
+
+In this project we analysied a dataset of 5.000 reviews from Amazone. First, we performed a Network Analyse were we got some insights about the connections of the words in the reviews. Next, we moved on to the NPL were we got insight in the patterns inside the dataset, where there's patterns to spot. In the sentiment analysis we were showed which words were positive and negative by the Bing lexicon. By using the Afinn lexicon the positive and negative were weighted.
+
+Lastly we used Maschine Learning to predict wether a review were 4/5 stars. We got an accuracy of 93% which is pretty high. But as we saw the most reviews were given 4 or 5 stars why we could expect a high accuracy.
