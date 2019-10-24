@@ -1,7 +1,7 @@
 ---
 title: "M2-Stakeholderreport-Amazon"
-author: "Mathias Flinta"
 date: "10/24/2019"
+output:
   html_document:
     code_folding: hide
     df_print: paged
@@ -11,6 +11,8 @@ date: "10/24/2019"
   pdf_document:
     toc: yes
 ---
+
+# Introduction
 
 This stakeholderreport is made in html and the code is hidden for you, just as the report. 
 
@@ -93,7 +95,7 @@ data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv"
 
 ```
 
-As the data is very raw and messy we now do some cleaning. We remove everything that is not normal letters. We also don't want to analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. This we do with lemmatization. 
+As the data is very raw and messy we now do some cleaning. We remove everything that is not normal letters. We also don't want to analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. This we do with lemmatization. We here want to primarily work with tidy text, where there is one token per row. A token here is a single word. 
 
 ```{r}
 tokens_clean <- data_raw %>% 
@@ -113,6 +115,56 @@ data_clean <- data_raw %>%
   mutate(reviews.text = reviewtext_lemma)
 
 ```
+
+We now have 153.994 tokens, in their each seperate rows in the tokens dataset. By doing lemmatization the number of unique tokens are reduced from around 6000 to around 4600 words, which should prove quite beneficial. 
+
+# Network analysis
+
+In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. 
+
+```{r}
+bigrams <- data_clean %>%
+  unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
+
+bigrams$bigram[1:2]
+```
+
+Remember that each bigram overlap, as can be seen from above, so that the first token is "the display" and the second is "display is". We also remove stopwords such as "i", "am", "the" and ect. from the bigrams, as these are not meaninfull for the analysis. These are taken from a dictionary and should remove most stopwords, but are not exhaustive. 
+
+The interesting thing is now to visualize the relationship between all words. Before doing this we will need to create the graph from a data frame of the bigrams. Here nodes are the words, and the edges correspond to the connection between the two words in the bigram. The first word in the bigram is the column 'from', and the second word is 'to', and it's therefore a directed network. The edges are given a weight corresponding to how many times it occures in the total amount of reviews called 'n'. The weight is plotted as the alpha value, so more frequent bigrams have a darker colour, and vice versa. Only bigrams that occure more than 15 times are plotted in this network, as it otherwise would get to messy. 
+
+```{r}
+bigrams_separated <- bigrams %>% 
+  separate(bigram,c("word1","word2"),sep = " ")
+
+bigrams_filtered <- bigrams_separated %>% 
+  filter(!word1 %in% stop_words$word) %>% 
+  filter(!word2 %in% stop_words$word)
+
+#New bigram counts
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+set.seed(123)
+bigram_graph <- bigram_counts %>% 
+  filter(n > 15) %>%  #The occurence of the bigram is more than 15. 
+  graph_from_data_frame()
+
+a<- grid::arrow(type = "closed",length = unit(.15,"inches"))
+
+ggraph(bigram_graph, layout = "fr") + 
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.05,'inches'))+
+  geom_node_point(color = "pink", size = 3) + 
+  geom_node_text(aes(label = name),vjust=1,hjust=1) + 
+  theme_void()
+```
+
+The plot above, give us some insights about the connection of words in the reviews. If we where to chose a random word in the graph, the most likely word to come afterwards would be the outgoing connection with the darkest colour. This way we can kinda predict what words that come next. Remember that the words have been lemmatized, so it shows the root word so the sentence created would not be grammatical correct, but would still carry the meaning as a whole. 
+
+We see many small connections such as customer -> service, sound -> quality, black -> friday and ect. Then we also have a bigger cluster where love is one of the key words. Many words such as kid, daughter, son, wife ect. point in the direction of love, and then outgoing edges from love is play, watch, alexa. Creating sentences such as "wife love alexa" or "kid love play". So first we have the person, then the sentiment word love, and then the action they do or what they love. We see that amazon is a central word with many outgoing connections, as many things are called "amazon prime", "amazon account" ect. Other key nodes are the product names such as "fire", "kindle", "hue". 
+
+
 
 
 
