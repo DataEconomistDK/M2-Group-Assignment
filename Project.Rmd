@@ -814,5 +814,68 @@ ran
 
 ```
 
+# Machine learning
+
+```{r}
+tweets_split = data_raw %>% select(id) %>% initial_split()
+train_data = training(tweets_split)
+test_data = testing(tweets_split)
+```
+
+```{r}
+sparse_words = tokens_nlp %>% count(id, word) %>% inner_join(train_data) %>% cast_sparse(id, word, n)
+```
+
+```{r}
+word_rownames = as.integer(rownames(sparse_words))
+joined = data_frame(id = word_rownames) %>% left_join(data_raw %>% select(id, reviews.rating))
+joined
+```
+
+```{r}
+#Neither
+
+joined$reviews.rating1[joined$reviews.rating == 1] <- 1
+joined$reviews.rating1[joined$reviews.rating == 2] <- 2
+joined$reviews.rating1[joined$reviews.rating == 3] <- 3
+joined$reviews.rating1[joined$reviews.rating == 4] <- 4
+joined$reviews.rating1[joined$reviews.rating == 5] <- 5
+
+joined$reviews.rating1
+
+j = joined$reviews.rating1 == 1
+log_model = cv.glmnet(sparse_words, j, family = "binomial", parallel = TRUE, keep = TRUE
+)
+```
+
+```{r}
+model = log_model
+coefs = model$glmnet.fit %>%
+  tidy() %>%
+  filter(lambda == model$lambda.1se)
+
+intercept = coefs %>%
+  filter(term == "(Intercept)") %>%
+  pull(estimate)
+
+classifications = tokens_nlp %>%
+  inner_join(test_data) %>%
+  inner_join(coefs, by = c("word" = "term")) %>%
+  group_by(id) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(intercept + score)) %>%
+  left_join(data_raw %>%
+    select(reviews.rating, id), by = "id")
+```
+
+```{r}
+a = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
+
+a
+```
+
+```{r}
+yardstick::accuracy(a)
+```
 
 
