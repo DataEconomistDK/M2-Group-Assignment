@@ -376,10 +376,10 @@ s5 <- tokens_nlp_bing$overall_sentiment[5] / count(n5)
 x <- c(s1,s2,s3,s4,s5)
 
 ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
-labs(title = "Overall Sentiment by Review rating",
+labs(title = "Mean of Sentiment Score for All Review Ratings",
      subtitle = "Reviews",
      x = "Review rating",
-     y = "Overall Sentiment")
+     y = "Mean Score of Sentiment")
 ```
 
 The scores are generally very low, because only 20% of all words in the reviews are sentiment words, and that positive and negative sentiments are averaged out. After taking all of this into account then a 5 star review on average only have around 0,14 positive sentiment, where a value of 1 would be one more positive sentiment word than negative. As we know that we have 9.352 sentiment words in our data, and 5000 reviews, this means that in total we have only around 2 sentiment words pr. review. So it would be hard to predict the amount of stars in the review only based on this bing sentiment, but it could assist in supervised ml. 
@@ -421,8 +421,6 @@ What's interesting here is that all reviews, except one star rating, have a posi
 Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
 
 First we create a sparse document-feature matrix from the corpus. Here we turn a tidy one-term-per-document-per-row data frame into a TermDocumentMatrix from the quanteda package.
-
-
 
 ```{r}
 #Document-feature-matrix
@@ -475,14 +473,14 @@ And then a transform it into a matrix and assign it a different name. The functi
 
 ```{r}
 set.seed(123)
-data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 200)
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 300)
 ```
 
 And now we can plot the features, here in a two dimensional plot. Here it's clusters after the function clutser for the hbdscan and it assigns a prob for each data point, which is a probability of a data point within its cluster, which runs from 0 to 1.  
 
 ```{r}
 set.seed(123)
-x = data_lsa_umap %>% 
+x <- data_lsa_umap %>% 
   bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
             prob = data_lsa_hdbscan$membership_prob) %>%
   ggplot(aes(x = V1, y = V2, col = cluster)) + 
@@ -502,9 +500,10 @@ Here we can see the interactive plot for the features and how they cluster toget
 
 Here, there's two different clusters and 91 outliers. One of the clusters is quiet big and have 3240 out of the 3542 features. The others are smaller and there's 91 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 100 features, but the function only makes two clusters. Unfortunately, we will not go any further regarding which words are in which clusters.
 
+
 ### Document analysis
 
-Now, we will move on to analyzing the reviews ans how they cluster.
+Now, we will move on to analyzing the reviews and how they cluster.
 
 ```{r}
 data_lsa_loading <- data_dfm1$docs %>%
@@ -526,26 +525,31 @@ And then we transform it into a dataframe.
 
 ```{r}
 data_lsa_umap %<>% as.data.frame() 
+
+
 ```
 
 And then a transform it into a matrix and assign it a different name. The function hdbscan computes the hierarchical cluster tree, where minPts is the minimum size of the clusters. We are dealing with 3542, so a minimum could be 200 points. 
 
 ```{r}
 set.seed(123)
-data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 200)
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 300)
 ```
 
 And now we can plot the features, here in a two dimensional plot. Here it's clusters after the function clutser for the hbdscan and it assigns a prob for each data point, which is a probability of a data point within its cluster, which runs from 0 to 1.  
 
 ```{r}
 set.seed(123)
-x = data_lsa_umap %>% 
+x <- data_lsa_umap %>% 
   bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
             prob = data_lsa_hdbscan$membership_prob) %>%
   ggplot(aes(x = V1, y = V2, col = cluster)) + 
   geom_point(aes(alpha = prob), shape = 21)
 
 ggplotly(x)
+
+
+data_lsa_umap %>% left_join()
 ```
 
 And now we run a table to see how many feautures are in each cluster.
@@ -555,8 +559,6 @@ table(data_lsa_hdbscan$cluster)
 ```
 
 Here the documents cluster differently than the features and they are much more spread out, even when the minimum points are the same. There's also more outliers compared to the last plot. Here there's five clusters, which could be the five different rating the documents have clustered after, but it's latent features. 
-
-
 
 
 ## LDA
