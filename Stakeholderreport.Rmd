@@ -499,7 +499,11 @@ yardstick::accuracy(confusion_matrix)
 
 As the above result shows, the model could predict 93 percent of the 4 and 5 star rated reviews.
 
+# Conclusion
 
+In this project we analysied a dataset of 5.000 reviews from Amazone. First, we performed a Network Analyse were we got some insights about the connections of the words in the reviews. Next, we moved on to the NPL were we got insight in the patterns inside the dataset. In the sentiment analysis we were showed which words were positive and negative by the Bing lexicon. By using the Afinn lexicon the positive and negative were weighted.
+
+Lastly we used Maschine Learning to predict wether a review were 4/5 stars. We got an accuracy of 93% which is pretty high. But as we saw the most reviews were given 4 or 5 stars why we could expect a high accuracy.
 
 
 
