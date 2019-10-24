@@ -564,7 +564,11 @@ Here the documents cluster differently than the features and they are much more 
 
 
 ## LDA
-The topicmodels package requires a document-term matrix as input: By using the function cast_dtm and tidytext we can easily produce it. The matrix have to be term-frequency weighted. We do so using the weightTf function of the TM package for the weighting argument:
+
+Linear Discriminant Analysis (LDA) is a method used to find linear combinations of features that characterizes or seperates two or more classes of objects or events. LDA is closely related to Principal Component Analysis (PCA).
+
+
+First, we will prepare the data.
 ```{r}
 data_dtm <- tokens_nlp %>%
   count(id, word) %>%
@@ -573,19 +577,19 @@ data_dtm <- tokens_nlp %>%
 data_dtm
 ```
 
-The matrix is rather sparse (Sparsity = 100%). We can try to reduce this by deleting less often used terms.
+The matrix above is rather sparse (Sparsity = 100%). We can try to reduce this by deleting less often used terms.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .99)
 ```
 
-The Sparsity is now 97% which is less than before but still rather sparce. The number of terms went from 3543 to 245. Which is a too high reduction.
+The Sparsity is now 97% which is less than before but still rather sparce. The number of terms was reduced by too much.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .999)
 ```
 
-The Sparsity is now 99% which is higher than before. The number of terms is now 1224 (vs. 3543). That's 1/3 of the 'original' terms.
+The Sparsity is now 99% which is higher than before. The number of terms is still quite low compared to the 'original' data.
 
 ```{r}
 data_dtm %>% removeSparseTerms(sparse = .9999)
@@ -594,7 +598,7 @@ data_dtm %>% removeSparseTerms(sparse = .9999)
 The results above is just the exact the same as before we tried to remove the sparse terms. It doesn't seems like it's worth to try to reduce the sparsity vs. the reduction of the terms. Therefore  we'll just accept a high level of sparsity (100%) to keep all of the terms. 
 
 
-Next we perfome a LDA. We're using the "Gibbs" sampling as method.
+Next we perfome a LDA. Beta in an output of the LDA model. Beta indicates the probability that a word occurs in a certain topic.
 ```{r, include=FALSE}
 data_lda <- data_dtm %>%
   LDA(k = 2, method = "Gibbs",
@@ -628,7 +632,7 @@ lda_beta %>%
        x = NULL, y = expression(beta)) +
   facet_wrap(~ topic, ncol = 2, scales = "free")
 ```
-Above the top 10 terms in each LDA topic are displayed. We choose the number of two clusters since choosing a higher number results in the same words displayed in two or more clusters.
+Above the top 10 terms in each LDA topic are displayed. We choose the number of two clusters since choosing a higher number results in the same words displayed in two or more clusters."love" is the word with the highest probability of occuring in topic 1, while "tablet" is the word with the highest probability of occuring in topic 2.
 
 It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
 
