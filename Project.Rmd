@@ -314,7 +314,7 @@ Here, we can see that there is a overepresentation of positive reviews, where th
 
 ### Bing
 
-We wil start with the bing lexicon. The bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can count the sentiments.
+We wil start with the Bing lexicon. The Bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexicon with tokenized data. After this we can count the sentiments.
 
 ```{r}
 sentiment_bing <- tokens_nlp %>% inner_join(get_sentiments("bing"))
@@ -346,7 +346,7 @@ labs(title ="Sentiment Word Counts",x ="Words")
 
 Here we can see the positive words are much more frequent than the negative words. For positive the words "love" and "easy" is way more frequent than all other words. 
 
-And now we will count all positive and negative words for all five stars reviews. 
+And now we will count all positive and negative words for each number of stars. 
 
 ```{r}
 tokens_nlp %>% 
