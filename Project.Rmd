@@ -389,7 +389,7 @@ labs(title = "Overall Sentiment by Review rating",
 The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
 
 ### Afinn
-Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating.
+Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating, take the mean value and plot it. 
 
 ```{r, include=FALSE}
 # get_sentiments("afinn") # used to download afinn package
@@ -398,32 +398,7 @@ sentiment_afinn <- tokens_nlp %>%
   group_by(reviews.rating) %>%
   summarize(sentiment = sum(value)) %>%
   arrange(sentiment)
-```
 
-And now we can plot it. The large numbers are even larger compared to the Bing lexicon.
-
-```{r}
-sentiment_afinn
-```
-
-And herafter we can again plot it. 
-
-```{r}
-ggplot(sentiment_afinn,aes(x = reviews.rating, y = sentiment, 
-                           fill = as.factor(reviews.rating))) +
-geom_col(show.legend = FALSE) +
-coord_flip() +
-labs(title ="Overall Sentiment by Stars",subtitle ="Reviews for Robotic Vacuums",
-     x ="Stars",y ="Overall Sentiment")
-
-labs(title ="Sentiment Word Counts",x ="Words")
-```
-
-What's interesting here is that all reviews, except one star rating, have a positive score. This could be because positive words have been giving a higher rating overall than negative words. Of course this could also be, because it categorizes negative words as positive words or vice versa, like "it's amazing how bad it is" may categorize "amazing" (4) as a positive word with a high value even if it used negative. 
-
-Again, it could be interesting to look at the mean scores of each rating review, because of the distribution of the review ratings.
-
-```{r}
 n1 <- tokens_nlp %>% filter(reviews.rating == 1)
 s1 <- sentiment_afinn$sentiment[1] / count(n1)
 n2 <- tokens_nlp %>% filter(reviews.rating == 2)
@@ -434,25 +409,17 @@ n4 <- tokens_nlp %>% filter(reviews.rating == 4)
 s4 <- sentiment_afinn$sentiment[4] / count(n4)
 n5 <- tokens_nlp %>% filter(reviews.rating == 5)
 s5 <- sentiment_afinn$sentiment[5] / count(n5)
-```
 
-Then we will combine the five mean values in a matrix.
-
-```{r}
 x <- c(s1,s2,s3,s4,s5)
-```
 
-And then plot the values.
-
-```{r}
 ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
-labs(title = "Mean of Sentiment Score for All Review Ratings" , subtitle = "Reviews", x = "Review rating"
-, y = "Mean Score of Sentiment")
+  labs(title = "Mean of Sentiment Score for All Review Ratings",
+       subtitle = "Reviews",
+       x = "Review rating",
+       y = "Mean Score of Sentiment")
 ```
-Interesting enough, the overall mean score of sentiments is quiet small, which is due to the fact that overall people in each rating is quiet high and overall sentiment score is quiet low. 
 
-
-Here, we can see that the positive words have been giving a higher overall value than the negative reviews, which is quiet interesting. So overall, with this dictionary, five star rating have a higher mean value of overall sentiment than one start rating have negative. Compared to the same plot from the bing lexicon, where five star and one star was almost the same size, one star is a bit smaller compared to five stars. 
+What's interesting here is that all reviews, except one star rating, have a positive score. Of course this could also be, because it categorizes negative words as positive words or vice versa, like "it's amazing how bad it is" may categorize "amazing" (4) as a positive word with a high value even if it used negatively. This could be fixed with further analysis to remove the effect of negatives, but is not within the current time scope of this project. 
 
 ## LSA
 Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
