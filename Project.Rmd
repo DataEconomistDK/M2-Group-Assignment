@@ -740,7 +740,7 @@ To check the accuarcy, we choose to use the package 'yardstick' to calculate it:
 yardstick::accuracy(confusion_matrix)
 ```
 
-As the above result shows, the model could predict 93 percent of the 4 and 5 star rated reviews, which is pretty good. The data set is a bit biased, as the group 4 and 5 stars is a lot bigger than 1, 2 and 3 stars and therefor you can question the accuracy and whether it would predict as well if the two groups would have the equal size.  
+As the above result shows, the model could predict 93 percent of the 4 and 5 star rated reviews based on the test and training set. 93 percent is pretty high, but the data set is a bit biased, as the group 4 and 5 stars is a lot bigger than 1, 2 and 3 stars and therefor you can question the accuracy and whether it would predict as well if the two groups would have the equal size.  
 
 # Conclusion
 
