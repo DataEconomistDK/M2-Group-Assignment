@@ -258,7 +258,7 @@ labs(title = "Overall Sentiment by Review rating",
      y = "Overall Sentiment")
 ```
 
-The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
+The scores are generally very low, because only 20% of all words in the reviews are sentiment words, and that positive and negative sentiments are averaged out. After taking all of this into account then a 5 star review on average only have around 0,14 positive sentiment, where a value of 1 would be one more positive sentiment word than negative. As we know that we have 9.352 sentiment words in our data, and 5000 reviews, this means that in total we have only around 2 sentiment words pr. review. So it would be hard to predict the amount of stars in the review only based on this bing sentiment, but it could assist in supervised ml. 
 
 ### Afinn
 Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating, take the mean value and plot it. 
