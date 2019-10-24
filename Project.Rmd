@@ -783,31 +783,16 @@ hist(classifications$probability)
 
 
 ```{r}
-#comment_classes <- classifications %>% 
-#  left_join(data_clean %>% select(reviews.rating, id),by = "id") %>% 
-#  mutate(reviews.rating = as.factor(reviews.rating))
-#
-#comment_classes %>% 
-#  roc_curve(as.factor(reviews.rating=="5"), probability) %>% 
-#  ggplot(aes(x = 1 - sensitivity , y = sensitivity)) +
-#  geom_line(
-#    color = "midnightblue",
-#    size = 1.5) + 
-#  geom_abline(lty = 2, alpha = 0.5,
-#              color = "gray50",
-#              size = 1.2) +
-#  labs(
-#    title = "ROC curve for text classification using regularized regression",
-#    subtitle = "Predicting whether text was written by Jane Austen or H.G. Wells"
-#  )
+comment_classes <- classifications %>% 
+  left_join(data_clean %>% select(reviews.rating, id),by = "id") %>% 
+  mutate(reviews.rating = as.factor(reviews.rating))
 ```
 
-# Slet ovenstående
-Det skal slettes! 
+
 ```{r}
 #for at jeg kunne printe den, har jeg lige markeret med hastag
-#comment_classes %>% 
-  #roc_auc(as.factor(reviews.rating=="5"),probability)
+comment_classes %>% 
+  roc_auc(as.factor(reviews.rating=="5"),probability)
 ```
 
 ```{r}
