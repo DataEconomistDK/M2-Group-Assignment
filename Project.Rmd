@@ -848,7 +848,7 @@ coefs <- model$glmnet.fit %>%
 
 coefs %>%
   group_by(estimate > 0) %>%
-  top_n(15, abs(estimate)) %>%
+  top_n(12, abs(estimate)) %>%
   ungroup() %>%
   ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
   geom_col(alpha = 0.8, show.legend = FALSE) +
