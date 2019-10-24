@@ -231,7 +231,7 @@ If we sum the above sentiment words, we can see there is a total of 9.352 sentim
 
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative. Then we take the mean and plot it. 
 
-```{r, include=FALSE}
+```{r}
 tokens_nlp_bing <- tokens_nlp %>%
   inner_join(get_sentiments("bing")) %>%
   count(reviews.rating, sentiment) %>%
@@ -260,7 +260,38 @@ labs(title = "Overall Sentiment by Review rating",
 
 The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
 
+### Afinn
+Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating, take the mean value and plot it. 
 
+```{r}
+# get_sentiments("afinn") # used to download afinn package
+sentiment_afinn <- tokens_nlp %>%
+  inner_join(get_sentiments("afinn")) %>%
+  group_by(reviews.rating) %>%
+  summarize(sentiment = sum(value)) %>%
+  arrange(sentiment)
+
+n1 <- tokens_nlp %>% filter(reviews.rating == 1)
+s1 <- sentiment_afinn$sentiment[1] / count(n1)
+n2 <- tokens_nlp %>% filter(reviews.rating == 2)
+s2 <- sentiment_afinn$sentiment[2] / count(n2)
+n3 <- tokens_nlp %>% filter(reviews.rating == 3)
+s3 <- sentiment_afinn$sentiment[3] / count(n3)
+n4 <- tokens_nlp %>% filter(reviews.rating == 4)
+s4 <- sentiment_afinn$sentiment[4] / count(n4)
+n5 <- tokens_nlp %>% filter(reviews.rating == 5)
+s5 <- sentiment_afinn$sentiment[5] / count(n5)
+
+x <- c(s1,s2,s3,s4,s5)
+
+ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+  labs(title = "Mean of Sentiment Score for All Review Ratings",
+       subtitle = "Reviews",
+       x = "Review rating",
+       y = "Mean Score of Sentiment")
+```
+
+What's interesting here is that all reviews, except one star rating, have a positive score. Of course this could also be, because it categorizes negative words as positive words or vice versa, just like we discussed in the bing sentiment analysis. 
 
 
 

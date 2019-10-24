@@ -355,7 +355,7 @@ If we sum the above sentiment words, we can see there is a total of 9.352 sentim
 
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative. Then we take the mean and plot it. 
 
-```{r, include=FALSE}
+```{r}
 tokens_nlp_bing <- tokens_nlp %>%
   inner_join(get_sentiments("bing")) %>%
   count(reviews.rating, sentiment) %>%
@@ -387,7 +387,7 @@ The scores are generally very low, because there wasn't a whole lot of words fro
 ### Afinn
 Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating, take the mean value and plot it. 
 
-```{r, include=FALSE}
+```{r}
 # get_sentiments("afinn") # used to download afinn package
 sentiment_afinn <- tokens_nlp %>%
   inner_join(get_sentiments("afinn")) %>%
