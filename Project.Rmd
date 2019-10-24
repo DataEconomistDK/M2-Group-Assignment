@@ -314,20 +314,15 @@ Here, we can see that there is a overepresentation of positive reviews, where th
 
 ### Bing
 
-We wil start with the Bing lexicon. The Bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexicon with tokenized data. After this we can count the sentiments.
+We wil start with the Bing lexicon. The Bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexicon with tokenized data. 
+
+Now we are plotting a word count, grouped by sentiment, showing the 10 most frequent negative and positive words. 
 
 ```{r}
 sentiment_bing <- tokens_nlp %>% inner_join(get_sentiments("bing"))
-sentiment_bing %>% count(sentiment)
-```
 
-Here we can see that there is a lot more positive than negative words, which we also explained earlier was due to the fact that there is a lot more positive then negative reviews. 
-
-Now we wil try to plot the sentiments, here grouped by positive and negative sentiments. We are plotting a word count, grouped by sentiment, showing the 10 most frequent negative and positive words.  
-
-```{r}
-sentiment_analysis <- sentiment_bing %>% filter(sentiment %in% c("positive"
-, "negative"))
+sentiment_analysis <- sentiment_bing %>% 
+  filter(sentiment %in% c("positive", "negative"))
 
 word_counts <- sentiment_analysis %>%
 count(word, sentiment) %>%
@@ -354,12 +349,13 @@ tokens_nlp %>%
   count(reviews.rating, sentiment)
 ```
 
-Comment on above!
+From the above table we can see that all categories of reviews both include positive and negative words. Even in 1 star rating reviews, almost a third of all sentiments words are positive. This might indicate that people use negative expressions such as "this is not very good", and then the only sentiment word is good which classifies as positive, but in reality the sentiment should be negative. This could be fixed with further analysis to remove the effect of negatives, but is not within the current time scope of this project. We also see that 2 star reviews have almost equal negative and positive sentiment words, which results in a almost neutral sentiment. 
+
 If we sum the above sentiment words, we can see there is a total of 9.352 sentiment words in our data out of a total of 52.244 words, which means that around 20% of all words left is sentiment words. This means that most words are still some form of stopword, neutral sentiment word or a product word. In the bing lexicon, there's around 6000 unique sentiment words and in our data there is 345 unique sentiments words from the bing lexicon. 
 
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative. Then we take the mean and plot it. 
 
-```{r, include=FALSE}
+```{r}
 tokens_nlp_bing <- tokens_nlp %>%
   inner_join(get_sentiments("bing")) %>%
   count(reviews.rating, sentiment) %>%
@@ -391,7 +387,7 @@ The scores are generally very low, because there wasn't a whole lot of words fro
 ### Afinn
 Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating, take the mean value and plot it. 
 
-```{r, include=FALSE}
+```{r}
 # get_sentiments("afinn") # used to download afinn package
 sentiment_afinn <- tokens_nlp %>%
   inner_join(get_sentiments("afinn")) %>%
@@ -419,7 +415,7 @@ ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.
        y = "Mean Score of Sentiment")
 ```
 
-What's interesting here is that all reviews, except one star rating, have a positive score. Of course this could also be, because it categorizes negative words as positive words or vice versa, like "it's amazing how bad it is" may categorize "amazing" (4) as a positive word with a high value even if it used negatively. This could be fixed with further analysis to remove the effect of negatives, but is not within the current time scope of this project. 
+What's interesting here is that all reviews, except one star rating, have a positive score. Of course this could also be, because it categorizes negative words as positive words or vice versa, just like we discussed in the bing sentiment analysis. 
 
 ## LSA
 Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
@@ -829,7 +825,7 @@ classifications = tokens_nlp %>%
 ```
 
 ```{r}
-a = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
+a = table(classifications$reviews.rating == 5, classifications$probability > 0.5)
 
 a
 ```

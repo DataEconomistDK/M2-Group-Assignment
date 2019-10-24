@@ -164,6 +164,137 @@ The plot above, give us some insights about the connection of words in the revie
 
 We see many small connections such as customer -> service, sound -> quality, black -> friday and ect. Then we also have a bigger cluster where love is one of the key words. Many words such as kid, daughter, son, wife ect. point in the direction of love, and then outgoing edges from love is play, watch, alexa. Creating sentences such as "wife love alexa" or "kid love play". So first we have the person, then the sentiment word love, and then the action they do or what they love. We see that amazon is a central word with many outgoing connections, as many things are called "amazon prime", "amazon account" ect. Other key nodes are the product names such as "fire", "kindle", "hue". 
 
+# NLP
+
+In this section we will analyze the data using Natural Language Processing. Here we will gain insight in the dataset by extracting and identifing patterns. We will start by doing some data preprocessing before we start our analysis. Then we will do a sentiment analysis, where we analysis the words and whether they're positive or negative. Next we will do a LSA analysis, where we will apply dimentionality reductions and cluster the data to look for latent patterns for the words and documents. And then we will do a LDA analysis to try to seperate the data into topics to look for patterns for the words.
+
+```{r}
+tokens_nlp <- tokens_clean %>% anti_join(stop_words)
+own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
+                        lexicon = "OWN")
+tokens_nlp <- tokens_clean %>% 
+  anti_join(stop_words %>% bind_rows(own_stopwords), by = "word")
+topwords <- tokens_nlp %>%
+  count(word, sort=TRUE)
+```
+
+Before doing the sentiment analysis, we will quickly look a the distribution of the review ratings.
+
+```{r}
+summary(tokens_nlp$reviews.rating)
+```
+
+Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.533 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1134 one-star review rating, 584 two-star review rating, 3028 three-star review rating, 12070 four-star review rating and 30383 five-star review rating. 
+
+## Sentiment analysis
+
+Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. 
+
+### Bing
+
+The Bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. We are now plotting a word count, grouped by sentiment, showing the 10 most frequent negative and positive words. 
+
+```{r}
+sentiment_bing <- tokens_nlp %>% inner_join(get_sentiments("bing"))
+
+sentiment_analysis <- sentiment_bing %>% 
+  filter(sentiment %in% c("positive", "negative"))
+
+word_counts <- sentiment_analysis %>%
+count(word, sentiment) %>%
+group_by(sentiment) %>%
+top_n(10, n) %>%
+ungroup() %>%
+mutate(
+word2 = fct_reorder(word, n))
+
+ggplot(word_counts, aes(x = word2, y = n, fill = sentiment)) +
+geom_col(show.legend = FALSE) +
+facet_wrap(~ sentiment, scales ="free") +
+coord_flip() +
+labs(title ="Sentiment Word Counts",x ="Words")
+```
+
+Here we can see the positive words are much more frequent than the negative words. For positive the words "love" and "easy" is way more frequent than all other words. 
+
+And now we will count all positive and negative words for each number of stars. 
+
+```{r}
+tokens_nlp %>% 
+  inner_join(get_sentiments("bing")) %>%
+  count(reviews.rating, sentiment)
+```
+
+From the above table we can see that all categories of reviews both include positive and negative words. Even in 1 star rating reviews, almost a third of all sentiments words are positive. This might indicate that people use negative expressions such as "this is not very good", and then the only sentiment word is good which classifies as positive, but in reality the sentiment should be negative. This could be fixed with further analysis to remove the effect of negatives, but is not within the current time scope of this project. We also see that 2 star reviews have almost equal negative and positive sentiment words, which results in a almost neutral sentiment. 
+
+If we sum the above sentiment words, we can see there is a total of 9.352 sentiment words in our data out of a total of 52.244 words, which means that around 20% of all words left is sentiment words. This means that most words are still some form of stopword, neutral sentiment word or a product word. In the bing lexicon, there's around 6000 unique sentiment words and in our data there is 345 unique sentiments words from the bing lexicon. 
+
+Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative. Then we take the mean and plot it. 
+
+```{r}
+tokens_nlp_bing <- tokens_nlp %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(reviews.rating, sentiment) %>%
+  spread(sentiment, n) %>%
+  mutate(overall_sentiment = positive - negative)
+
+n1 <- tokens_nlp %>% filter(reviews.rating == 1)
+s1 <- tokens_nlp_bing$overall_sentiment[1] / count(n1)
+n2 <- tokens_nlp %>% filter(reviews.rating == 2)
+s2 <- tokens_nlp_bing$overall_sentiment[2] / count(n2)
+n3 <- tokens_nlp %>% filter(reviews.rating == 3)
+s3 <- tokens_nlp_bing$overall_sentiment[3] / count(n3)
+n4 <- tokens_nlp %>% filter(reviews.rating == 4)
+s4 <- tokens_nlp_bing$overall_sentiment[4] / count(n4)
+n5 <- tokens_nlp %>% filter(reviews.rating == 5)
+s5 <- tokens_nlp_bing$overall_sentiment[5] / count(n5)
+
+x <- c(s1,s2,s3,s4,s5)
+
+ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+labs(title = "Overall Sentiment by Review rating",
+     subtitle = "Reviews",
+     x = "Review rating",
+     y = "Overall Sentiment")
+```
+
+The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
+
+### Afinn
+Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating, take the mean value and plot it. 
+
+```{r}
+# get_sentiments("afinn") # used to download afinn package
+sentiment_afinn <- tokens_nlp %>%
+  inner_join(get_sentiments("afinn")) %>%
+  group_by(reviews.rating) %>%
+  summarize(sentiment = sum(value)) %>%
+  arrange(sentiment)
+
+n1 <- tokens_nlp %>% filter(reviews.rating == 1)
+s1 <- sentiment_afinn$sentiment[1] / count(n1)
+n2 <- tokens_nlp %>% filter(reviews.rating == 2)
+s2 <- sentiment_afinn$sentiment[2] / count(n2)
+n3 <- tokens_nlp %>% filter(reviews.rating == 3)
+s3 <- sentiment_afinn$sentiment[3] / count(n3)
+n4 <- tokens_nlp %>% filter(reviews.rating == 4)
+s4 <- sentiment_afinn$sentiment[4] / count(n4)
+n5 <- tokens_nlp %>% filter(reviews.rating == 5)
+s5 <- sentiment_afinn$sentiment[5] / count(n5)
+
+x <- c(s1,s2,s3,s4,s5)
+
+ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
+  labs(title = "Mean of Sentiment Score for All Review Ratings",
+       subtitle = "Reviews",
+       x = "Review rating",
+       y = "Mean Score of Sentiment")
+```
+
+What's interesting here is that all reviews, except one star rating, have a positive score. Of course this could also be, because it categorizes negative words as positive words or vice versa, just like we discussed in the bing sentiment analysis. 
+
+
+
 
 
 
