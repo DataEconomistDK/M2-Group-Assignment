@@ -400,7 +400,7 @@ sentiment_afinn <- tokens_nlp %>%
   arrange(sentiment)
 ```
 
-And now we can plot it. Th large numbers are even larger compared to the bing lexicon.
+And now we can plot it. The large numbers are even larger compared to the bing lexicon.
 
 ```{r}
 sentiment_afinn
