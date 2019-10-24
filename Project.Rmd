@@ -267,13 +267,11 @@ own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"),
                         lexicon = "OWN")
 ```
 
-Now we will remove out own stopwords. Afterwards we will filter first for "ndoc", which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
-
 ```{r}
 tokens_nlp <- tokens_clean %>% 
   anti_join(stop_words %>% bind_rows(own_stopwords), by = "word") 
 
-tokens_nlp <- tokens_nlp %>% add_count(id, name = "ndoc") %>% filter(ndoc > 5) %>% select(-ndoc)
+#tokens_nlp <- tokens_nlp %>% add_count(id, name = "ndoc") %>% filter(ndoc > 5) %>% #select(-ndoc)
 ```
 
 We will now again look at the top words and again plot them.
