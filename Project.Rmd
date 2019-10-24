@@ -289,7 +289,7 @@ topwords %>%
        x = "Frequency", 
        y = "Top Words")
 ```
-
+We see that the individual tokens that are most frequent are sentiment words such as "love", "easy" or product names such as "tablet", "kindle" or the action they take "buy" or "read". 
 
 
 ## TF-IDF
@@ -316,7 +316,7 @@ Here, we can see that there is a overepresentation of positive reviews, where th
 
 ###Bing
 
-We wil start with the bing lexicon. The bing lexicon categorizes words in a binary fashion into positive and negative categories. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can count the sentiments.
+We wil start with the bing lexicon. The bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can count the sentiments.
 
 ```{r}
 sentiment_bing <- tokens_nlp %>% inner_join(get_sentiments("bing"))
@@ -346,24 +346,16 @@ coord_flip() +
 labs(title ="Sentiment Word Counts",x ="Words")
 ```
 
-Here we can see the positive words are much more frequent than the negative words. 
+Here we can see the positive words are much more frequent than the negative words. For positive the words "love" and "easy" is way more frequent than all other words. 
 
 And now we will count all positive and negative words for all five stars reviews. 
 
 ```{r}
-tokens_nlp %>% inner_join(get_sentiments("bing")) %>% count(reviews.rating, sentiment)
-```
-
-And here we will show all the words in one table, where we again can see that the positive words are overrepresented compared to the negative words.
-
-```{r}
-bing_word_counts <- tokens_nlp %>%
+tokens_nlp %>% 
   inner_join(get_sentiments("bing")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  ungroup()
-
-bing_word_counts
+  count(reviews.rating, sentiment)
 ```
+
 What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not in out data not included in the lexicon, or there may be a lot of neutral words.
 
 Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative.
