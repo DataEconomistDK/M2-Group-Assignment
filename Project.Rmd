@@ -16,7 +16,7 @@ output:
 
 This project is made to be read in html, so open the html file in your preferred webbrowser. As standard the code is hidden in this document, but you can show all by pressing the button "Code" in the top right of the document. You can also show individual chunks of code by pressing the buttons "Code" which are placed around in the document. 
 
-Link for google colab: 
+Link for google colab: https://colab.research.google.com/drive/1SK3M2bfXmPKTQXr4utg8nCO4s6JPRWMw 
 
 Link for github: https://github.com/DataEconomistDK/M2-Group-Assignment 
 
