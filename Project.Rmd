@@ -354,9 +354,10 @@ tokens_nlp %>%
   count(reviews.rating, sentiment)
 ```
 
-What's interesting is that there is only 345 unique words being included. In the lexicon, there's around 6000 unique words, but apparently there must either be a lot of words not in out data not included in the lexicon, or there may be a lot of neutral words.
+Comment on above!
+If we sum the above sentiment words, we can see there is a total of 9.352 sentiment words in our data out of a total of 52.244 words, which means that around 20% of all words left is sentiment words. This means that most words are still some form of stopword, neutral sentiment word or a product word. In the bing lexicon, there's around 6000 unique sentiment words and in our data there is 345 unique sentiments words from the bing lexicon. 
 
-Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative.
+Now we will find the overall sentiment score for every review rating, taking the positive sentiments and subtracting the negative. Then we take the mean and plot it. 
 
 ```{r, include=FALSE}
 tokens_nlp_bing <- tokens_nlp %>%
@@ -364,19 +365,7 @@ tokens_nlp_bing <- tokens_nlp %>%
   count(reviews.rating, sentiment) %>%
   spread(sentiment, n) %>%
   mutate(overall_sentiment = positive - negative)
-```
 
-And then we will plot it. 
-
-```{r}
-ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = overall_sentiment, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
-labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
-, y = "Overall Sentiment")
-```
-
-What's interesting is that rating 5 is very dominant, therefor we will also look at the mean score for all five ratings to see how they distribute. First we will find the mean score for all five rating.
-
-```{r}
 n1 <- tokens_nlp %>% filter(reviews.rating == 1)
 s1 <- tokens_nlp_bing$overall_sentiment[1] / count(n1)
 n2 <- tokens_nlp %>% filter(reviews.rating == 2)
@@ -387,26 +376,20 @@ n4 <- tokens_nlp %>% filter(reviews.rating == 4)
 s4 <- tokens_nlp_bing$overall_sentiment[4] / count(n4)
 n5 <- tokens_nlp %>% filter(reviews.rating == 5)
 s5 <- tokens_nlp_bing$overall_sentiment[5] / count(n5)
-```
 
-Then we will combine the five mean values in a matrix.
-
-```{r}
 x <- c(s1,s2,s3,s4,s5)
-```
 
-And then plot the values.
-
-```{r}
 ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.rating))) + geom_col(show.legend = FALSE) + coord_flip() +
-labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "Review rating"
-, y = "Overall Sentiment")
+labs(title = "Overall Sentiment by Review rating",
+     subtitle = "Reviews",
+     x = "Review rating",
+     y = "Overall Sentiment")
 ```
 
 The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
 
 ### Afinn
-Now, we will analyzie the data using the afinn lexicon, which gives every word a score between -5 and 5. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating.
+Now, we will analyze the data using the afinn lexicon, which gives every word a score between -5 and 5. Here 5 is very positive, and -5 is very negative. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating.
 
 ```{r, include=FALSE}
 # get_sentiments("afinn") # used to download afinn package
