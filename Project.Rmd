@@ -547,9 +547,6 @@ x <- data_lsa_umap %>%
   geom_point(aes(alpha = prob), shape = 21)
 
 ggplotly(x)
-
-
-data_lsa_umap %>% left_join()
 ```
 
 And now we run a table to see how many feautures are in each cluster.
