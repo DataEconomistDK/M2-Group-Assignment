@@ -74,11 +74,11 @@ pacman::p_load(knitr, # For knitr to html
                plotly,
                rsample,
                glmnet,
-               #doMC,
                broom,
                yardstick,
                lda, # For LDA-analysis
-               topicmodels # LDA models
+               topicmodels, # LDA models
+               broom
                )
 
 # I set a seed for reproduciability
@@ -634,8 +634,10 @@ Above the top 10 terms in each LDA topic are displayed. We choose the number of 
 
 It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
 
+
+
 # Supervised machine learning
-In this section we will analyse whether we can predict if the review is good, her categorized as rating 4 or 5. We will apply supervised machine learning to do so and create a binary logistic model. 
+In this section we will analyse whether we can predict if the review is good, here categorized as rating 4 or 5. We will apply supervised machine learning to do so and create a binary logistic model. 
 
 We start by splitting out data_clean into test and training data. Out test data consist of 25 percent, here 1250 reviews, and our training data consist of 75 percent, here 3750 reviews.
 
@@ -669,44 +671,19 @@ data_clean$reviews.rating[data_clean$reviews.rating == 5] <- 1
 joined = data_frame(id = word_rownames) %>% left_join(data_clean %>% select(id, reviews.rating))
 ```
 
-
-
+Now we want to train our model. To do this we will be using glmnet which can handle parallel processing, this make it possible for training the model with cross validation.
 
 
 ```{r}
 j = joined$reviews.rating == 1
-log_model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, intercept = FALSE
+model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, intercept = FALSE
 )
 ```
 
-```{r}
-model = log_model
-coefs = model$glmnet.fit %>%
-  tidy()
-
-classifications = tokens_clean %>%
-  inner_join(test_data) %>%
-  inner_join(coefs, by = c("word" = "term")) %>%
-  group_by(id) %>%
-  summarize(score = sum(estimate)) %>%
-  mutate(probability = plogis(score)) %>% 
-  left_join(data_clean, by="id")
-```
-
-```{r}
-a = table(classifications$reviews.rating == 1, classifications$probability > 0.7)
-a
-```
-
-```{r}
-yardstick::accuracy(a)
-```
+The model is made, now we want to dig more deeply into the understading of our model. First we want to investigate which predictors there are driving the model. To do this we will check the coefficients of the models, with the largest value of Lambda.
 
 
 ```{r}
-
-library(broom)
-
 coefs <- model$glmnet.fit %>%
   tidy() %>%
   filter(lambda == model$lambda.1se)
@@ -723,4 +700,28 @@ coefs %>%
     title = "Coefficients that increase/decrease probability the most"
   )
 ```
+
+The graph above gives an overview, over which coefficients that either increase or decrease the probalitiy of the models prediction of the rating.
+Further more we want to investigate the confusion matrix of the model. Here we want to make a classification, which will tell how many predictions were true.
+
+```{r}
+classifications = tokens_clean %>%
+  inner_join(test_data) %>%
+  inner_join(coefs, by = c("word" = "term")) %>%
+  group_by(id) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(score)) %>% 
+  left_join(data_clean, by="id")
+
+confusion_matrix = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
+confusion_matrix
+```
+
+As the result shows us. The model could predict 1154 true out the original 1250 observations. To check the accuarcy, we choose to use the function yardstick to calculate it:
+
+```{r}
+yardstick::accuracy(confusion_matrix)
+```
+
+As the above result shows, the model could predict 93% of the 4 and 5 star rated reviews.
 
