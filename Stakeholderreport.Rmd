@@ -1,0 +1,125 @@
+---
+title: "M2-Stakeholderreport-Amazon"
+author: "Mathias Flinta"
+date: "10/24/2019"
+  html_document:
+    code_folding: hide
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+This stakeholderreport is made in html and the code is hidden for you, just as the report. 
+
+In this project we will work with a dataset of 5.000 consumer reviews for a few Amazon electronic products like f. ex. Kindle. Data is collected between September 2017 and October 2018.
+
+```{r, include=FALSE}
+### Knitr options
+knitr::opts_chunk$set(warning=FALSE,
+                     message=FALSE,
+                     fig.align="center"
+                     )
+
+options(warn=-1) # Hides all warnings, as the knitr options only work on local R-Markdown mode. 
+
+Sys.setenv(LANG = "en")
+```
+
+```{r, include=FALSE}
+# Packages
+
+if (!require("pacman")) install.packages("pacman") # package for loading and checking packages :)
+pacman::p_load(knitr, # For knitr to html
+               rmarkdown, # For formatting the document
+               tidyverse, # Standard datasciewnce toolkid (dplyr, ggplot2 et al.)
+               data.table, # for reading in data ect. 
+               magrittr,# For advanced piping (%>% et al.)
+               igraph, # For network analysis
+               tidygraph, # For tidy-style graph manipulation
+               ggraph, # For ggplot2 style graph plotting
+               Matrix, # For some matrix functionality
+               ggforce, # Awesome plotting
+               kableExtra, # Formatting for tables
+               car, # recode functions 
+               tidytext, # Structure text within tidyverse
+               topicmodels, # For topic modelling
+               tm, # text mining library
+               quanteda, # for LSA (latent semantic analysis)
+               uwot, # for UMAP
+               dbscan, # for density based clustering
+               SnowballC,
+               textdata,
+               wordcloud, 
+               textstem, # for textstemming 
+               tidyr,
+               widyr,
+               reshape2,
+               quanteda,
+               uwot,
+               dbscan,
+               plotly,
+               rsample,
+               glmnet,
+               doMC,
+               broom,
+               yardstick,
+               lda, # For LDA-analysis
+               topicmodels # LDA models
+               )
+
+# I set a seed for reproduciability
+set.seed(123) # Have to be set every time a rng proces is being made. 
+```
+
+For this report we will only use a subset of the data we downloaded from kaggle. We select the following variables: 
+
+- id: An id number given to each review created by us corrensponding to the row number of the raw data. 
+
+- name: The full name of the product
+
+- reviews.rating: The rating of the product on a scale from 1-5. 
+
+- reviews.title: The title of the review, given by the customer. 
+
+- reviews.text: The review text written by the customer. 
+
+```{r}
+data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
+  select(name, reviews.rating, reviews.text, reviews.title) %>% 
+  mutate(id = row_number())
+
+```
+
+As the data is very raw and messy we now do some cleaning. We remove everything that is not normal letters. We also don't want to analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. This we do with lemmatization. 
+
+```{r}
+tokens_clean <- data_raw %>% 
+  unnest_tokens(word, reviews.text, to_lower = TRUE) %>% 
+  mutate(word = word %>% str_remove_all("[^a-zA-Z]")) %>%
+  filter(str_length(word) > 0) %>% 
+  mutate(word = lemmatize_words(word))
+
+reviewtext_lemma <- tokens_clean %>% 
+  group_by(id) %>% 
+  summarize(reviews.text = str_c(word, collapse = " ")) %>% 
+  ungroup() %>% 
+  select(reviews.text) %>% 
+  as_vector()
+
+data_clean <- data_raw %>%
+  mutate(reviews.text = reviewtext_lemma)
+
+```
+
+
+
+
+
+
+
+
+
+
