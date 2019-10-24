@@ -808,17 +808,15 @@ joined
 ```{r}
 #Neither
 j = joined$reviews.rating == 1
-log_model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE
+log_model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, intercept = FALSE
 )
 ```
 
 ```{r}
 model = log_model
-coefs = model$glmnet.fit %>% filter
+coefs = model$glmnet.fit %>%
   tidy() %>%
   filter(lambda == model$lambda.1se)
-
-
 
 classifications = tokens_nlp %>%
   inner_join(test_data) %>%
@@ -831,7 +829,8 @@ classifications
 ```
 
 ```{r}
-a = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
+a = table(classifications$reviews.rating == 1, classifications$probability > 0.9)
+a
 ```
 
 ```{r}
@@ -853,7 +852,7 @@ coefs %>%
   ungroup() %>%
   ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
   geom_col(alpha = 0.8, show.legend = FALSE) +
-  coord_flip() +
+  coord_flip() + geom_hline(aes(yintercept=0)) +
   labs(
     x = NULL,
     title = "Coefficients that increase/decrease probability the most"
