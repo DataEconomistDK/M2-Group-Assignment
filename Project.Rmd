@@ -558,6 +558,7 @@ table(data_lsa_hdbscan$cluster)
 Here the documents cluster differently than the features and they are much more spread out, even when the minimum points are the same. There's also more outliers compared to the last plot. Here there's five clusters, which could be the five different rating the documents have clustered after, but it's latent features. 
 
 
+
 ## LDA
 
 Linear Discriminant Analysis (LDA) is a method used to find linear combinations of features that characterizes or seperates two or more classes of objects or events. LDA is closely related to Principal Component Analysis (PCA).
