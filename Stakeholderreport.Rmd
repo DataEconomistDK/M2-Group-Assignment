@@ -88,7 +88,7 @@ For this report we will only use a subset of the data we downloaded from kaggle.
 
 - reviews.text: The review text written by the customer. 
 
-```{r}
+```{r, include=FALSE}
 data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv") %>% 
   select(name, reviews.rating, reviews.text, reviews.title) %>% 
   mutate(id = row_number())
@@ -97,7 +97,7 @@ data_raw <- read_csv("Datafiniti_Amazon_Consumer_Reviews_of_Amazon_Products.csv"
 
 As the data is very raw and messy we now do some cleaning. We remove everything that is not normal letters. We also don't want to analyze the exact word strings in the reviews, as this would include several possible forms of the words used. F. ex. think and thought. Instead we want to merge all possible forms of a word into it's root word. This we do with lemmatization. We here want to primarily work with tidy text, where there is one token per row. A token here is a single word. 
 
-```{r}
+```{r, include=FALSE}
 tokens_clean <- data_raw %>% 
   unnest_tokens(word, reviews.text, to_lower = TRUE) %>% 
   mutate(word = word %>% str_remove_all("[^a-zA-Z]")) %>%
@@ -122,7 +122,7 @@ We now have 153.994 tokens, in their each seperate rows in the tokens dataset. B
 
 In this assignment we want to use network analysis to gain new insights into how the reviews are structured. Here we extract bigrams from each review text, clean and prepare them to then create networks. Where we before considered tokens as individual words, we can create them as n-grams that are a consecutive sequence of words. Bigrams are n-grams with a length of 2 consecutive words. This can be used to gain context and connection between words. 
 
-```{r}
+```{r, include=FALSE}
 bigrams <- data_clean %>%
   unnest_tokens(bigram, reviews.text, token = "ngrams", n = 2) # n is the number of words to consider in each n-gram. 
 
@@ -168,7 +168,7 @@ We see many small connections such as customer -> service, sound -> quality, bla
 
 In this section we will analyze the data using Natural Language Processing. Here we will gain insight in the dataset by extracting and identifing patterns. We will start by doing some data preprocessing before we start our analysis. Then we will do a sentiment analysis, where we analysis the words and whether they're positive or negative. Next we will do a LSA analysis, where we will apply dimentionality reductions and cluster the data to look for latent patterns for the words and documents. And then we will do a LDA analysis to try to seperate the data into topics to look for patterns for the words.
 
-```{r}
+```{r, include=FALSE}
 tokens_nlp <- tokens_clean %>% anti_join(stop_words)
 own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"), 
                         lexicon = "OWN")
@@ -293,11 +293,211 @@ ggplot(tokens_nlp_bing, aes(x = reviews.rating, y = x, fill = as.factor(reviews.
 
 What's interesting here is that all reviews, except one star rating, have a positive score. Of course this could also be, because it categorizes negative words as positive words or vice versa, just like we discussed in the bing sentiment analysis. 
 
+## LSA
+Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
+
+```{r, include=FALSE}
+set.seed(123)
+data_dfm <- tokens_nlp %>% 
+  count(id, word) %>%
+  cast_dfm(document = id, term = word, value = n)
+
+data_dfm1 <- data_dfm %>% 
+  textmodel_lsa(nd = 10)
+
+data_lsa_loading <- data_dfm1$features %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "word") %>% 
+  as_tibble()
+
+data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("word"), 
+                      n_neighbors = 15, 
+                      metric = "cosine",
+                      min_dist = 0.01,
+                      scale = TRUE,
+                      verbose = TRUE,
+                      n_threads = 8) 
+
+data_lsa_umap %<>% as.data.frame()
 
 
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 200)
+
+x = data_lsa_umap %>% 
+  bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
+            prob = data_lsa_hdbscan$membership_prob) %>%
+  ggplot(aes(x = V1, y = V2, col = cluster)) + 
+  geom_point(aes(alpha = prob), shape = 21)
+
+```
+
+```{r}
+ggplotly(x)
+```
+
+Here, we can plot the features, the words, here in a two dimensional plot. Here, the function in R has reduced the number of dimensions in the data set using the latent features of the data. It clusters and assigns a probability for each data point, which is a probability of a data point within its cluster, which runs from 0 to 1.  
+
+Here, there's two different clusters and 91 outliers. One of the clusters is quiet big and have 3240 out of the 3542 features. The others are smaller and there's 91 outliers, which doesn't have a cluster. There could be lot more clusters, because each cluster should have a minimum of 100 features, but the function only makes two clusters. A lot of the words cluster together, as we can see, where the main group (blue cluster) has almost all of the features assigned to it.
+
+### Document analysis
+
+Now, we will move on to analyzing the reviews and how they cluster.
+
+```{r, include=FALSE}
+set.seed(123)
+
+data_lsa_loading <- data_dfm1$docs %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "id") %>% 
+  as_tibble()
 
 
+data_lsa_umap <- umap(data_lsa_loading %>% column_to_rownames("id"), 
+                       n_neighbors = 15, metric = "cosine", min_dist = 0.01, scale = TRUE,
+                       verbose = TRUE, n_threads = 8) 
 
+data_lsa_umap %<>% as.data.frame() 
+
+data_lsa_hdbscan <- data_lsa_umap %>% as.matrix() %>% hdbscan(minPts = 300)
+
+x = data_lsa_umap %>% 
+  bind_cols(cluster = data_lsa_hdbscan$cluster %>% as.factor(), 
+            prob = data_lsa_hdbscan$membership_prob) %>%
+  ggplot(aes(x = V1, y = V2, col = cluster)) + 
+  geom_point(aes(alpha = prob), shape = 21)
+```
+
+```{r}
+ggplotly(x)
+```
+
+
+Here the documents cluster differently than the features and they are much more spread out, even when the minimum points for each cluster is the same. There's also more outliers compared to the last plot. Here there's six clusters, which basically could be the five different ratings the documents are clustered after, but it's latent features. 
+
+## LDA
+
+Linear Discriminant Analysis (LDA) is a method used to find linear combinations of features that characterizes or seperates two or more classes of objects or events. LDA is closely related to Principal Component Analysis (PCA).
+
+Next we perfome a LDA. Beta in an output of the LDA model. Beta indicates the probability that a word occurs in a certain topic.
+
+```{r, include=FALSE}
+data_dtm <- tokens_nlp %>%
+  count(id, word) %>%
+  cast_dtm(document = id, term = word, value = n, weighting = tm::weightTf)
+
+data_dtm
+
+data_dtm %>% removeSparseTerms(sparse = .99)
+
+data_dtm %>% removeSparseTerms(sparse = .999)
+
+data_dtm %>% removeSparseTerms(sparse = .9999)
+
+data_lda <- data_dtm %>%
+  LDA(k = 2, method = "Gibbs",
+      control = list(seed = 1337))
+
+lda_beta <- data_lda %>%
+  tidy(matrix = "beta") %>%
+  group_by(topic) %>%
+  arrange(topic, desc(beta)) %>%
+  slice(1:10) %>%
+  ungroup()
+```
+
+```{r}
+lda_beta %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  group_by(topic, term) %>%
+  arrange(desc(beta)) %>%
+  ungroup() %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(title = "Top 10 terms in each LDA topic",
+       x = NULL, y = expression(beta)) +
+  facet_wrap(~ topic, ncol = 2, scales = "free")
+```
+
+
+Above the top 10 terms in each LDA topic are displayed. We choose the number of two clusters since choosing a higher number results in the same words displayed in two or more clusters."love" is the word with the highest probability of occuring in topic 1, while "tablet" is the word with the highest probability of occuring in topic 2.
+
+It seems like cluster 2 contains some words with a tecnological character (echo, screen, app, alexa, device) while cluster 1 seems related to books/reading (read, book, kindle) and positive words (love, easy).
+
+# Supervised machine learning
+In this section we will analyse whether we can predict if the review is good, here categorized as rating 4 or 5. We will apply supervised machine learning to do so and create a binary logistic model. 
+
+```{r, include=FALSE}
+split = data_clean %>% select(id, reviews.rating) %>% initial_split()
+train_data = training(split)
+test_data = testing(split)
+
+sparse_words = tokens_clean %>% count(id, word) %>% inner_join(train_data) %>% cast_sparse(id, word, n)
+
+word_rownames = as.integer(rownames(sparse_words))
+
+data_clean$reviews.rating[data_clean$reviews.rating == 1] <- 0
+data_clean$reviews.rating[data_clean$reviews.rating == 2] <- 0
+data_clean$reviews.rating[data_clean$reviews.rating == 3] <- 0
+data_clean$reviews.rating[data_clean$reviews.rating == 4] <- 1
+data_clean$reviews.rating[data_clean$reviews.rating == 5] <- 1
+
+joined = data_frame(id = word_rownames) %>% left_join(data_clean %>% select(id, reviews.rating))
+
+j = joined$reviews.rating == 1
+model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, intercept = FALSE
+)
+
+coefs <- model$glmnet.fit %>%
+  tidy() %>%
+  filter(lambda == model$lambda.1se)
+```
+
+We want to dig more deeply into the understading of our model. First we want to investigate which predictors there are driving the model. To do this we will check the coefficients of the models, with the largest value of Lambda.
+
+```{r}
+coefs %>%
+  group_by(estimate > 0) %>%
+  top_n(15, abs(estimate)) %>%
+  ungroup() %>%
+  ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
+  geom_col(alpha = 0.8, show.legend = FALSE) +
+  coord_flip() + geom_hline(aes(yintercept=0)) +
+  labs(
+    x = NULL,
+    title = "Coefficients that increase/decrease probability the most"
+  )
+```
+
+The graph above gives an overview, over which coefficients that either increase or decrease the probalitiy of the models prediction of the rating.
+
+Further more we want to investigate the confusion matrix of the model. Here we want to make a classification, which will tell how many predictions were true.
+
+```{r, include=FALSE}
+classifications = tokens_clean %>%
+  inner_join(test_data) %>%
+  inner_join(coefs, by = c("word" = "term")) %>%
+  group_by(id) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(score)) %>% 
+  left_join(data_clean, by="id")
+
+confusion_matrix = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
+
+```
+
+```{r}
+confusion_matrix
+```
+
+As the result shows us. The model could predict 1154 true out the original 1250 observations. To check the accuarcy, we choose to use the function yardstick to calculate it:
+
+```{r}
+yardstick::accuracy(confusion_matrix)
+```
+
+As the above result shows, the model could predict 93 percent of the 4 and 5 star rated reviews.
 
 
 
