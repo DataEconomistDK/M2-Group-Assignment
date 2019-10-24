@@ -267,14 +267,12 @@ own_stopwords <- tibble(word= c("im", "ive", "dont", "doesnt", "didnt"),
                         lexicon = "OWN")
 ```
 
-Now we will remove out own stopwords. Afterwards we will filter first for "ndoc", which is the total number of words in the document. Here we say that documents, here reviws, with less than five words in them.
-
 ```{r}
 tokens_nlp <- tokens_clean %>% 
   anti_join(stop_words %>% bind_rows(own_stopwords), by = "word")
 ```
 
-We will now again look at the top words and again plot them.
+We will now  look at the top words and plot them:
 
 ```{r}
 topwords <- tokens_nlp %>%
@@ -300,11 +298,11 @@ Here tf is the term-frequency and idf is the inverse document-frequency, a coeff
 
 We tried to run a tf-idf analysis but we couldn't really say anything from the analysis, probably because there's a lot of documents. Every person has their own dictionary and a lot of words may appear very rare, and therefor they may be giving a high idf coefficient, which is why their tf-idf is high. If we were analyzing a number of books, the analyses may have made more sense. 
 
-##Sentiment analysis
+## Sentiment analysis
 
 Sentiment analysis refers to a use of text analysis to extract and identify subjective information, where it analyzises whether the words are positive or negative. In this section, we will be doing two sentiment analysis, first by identifying positive and negative words using the bing lexicon and after this using the afinn lexicon. 
 
-###General analysis
+### General analysis
 
 Before doing the sentiment analysis, we will quickly look a the distribution of the review ratings.
 
@@ -312,9 +310,9 @@ Before doing the sentiment analysis, we will quickly look a the distribution of 
 summary(tokens_nlp$reviews.rating)
 ```
 
-Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.515 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1134 one-star review rating, 584 two-star review rating, 3028 three-star review rating, 12070 four-star review rating and 30383 five-star review rating. 
+Here, we can see that there is a overepresentation of positive reviews, where the mean is at 4.533 and the median at 5.00. This will contribute to how we do the rest of the sentiment analysis. There is 1134 one-star review rating, 584 two-star review rating, 3028 three-star review rating, 12070 four-star review rating and 30383 five-star review rating. 
 
-###Bing
+### Bing
 
 We wil start with the bing lexicon. The bing lexicon categorizes words in a binary fashion as positive or negative with no weighting. Here, we are using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can count the sentiments.
 
@@ -407,7 +405,7 @@ labs(title = "Overall Sentiment by Review rating" , subtitle = "Reviews", x = "R
 
 The scores are generally very low, because there wasn't a whole lot of words from the lexicon. But here we can see that the 1 score rating is much lower and almost have the same negative size as the five-star rating, which is actually an interesting insight.
 
-###Afinn
+### Afinn
 Now, we will analyzie the data using the afinn lexicon, which gives every word a score between -5 and 5. We are again using the function get_sentiment to get a specific sentiment lexicon and inner_join to join the lexcon with tokenized data. After this we can summarize the value of each review rating.
 
 ```{r, include=FALSE}
@@ -473,7 +471,7 @@ Interesting enough, the overall mean score of sentiments is quiet small, which i
 
 Here, we can see that the positive words have been giving a higher overall value than the negative reviews, which is quiet interesting. So overall, with this dictionary, five star rating have a higher mean value of overall sentiment than one start rating have negative. Compared to the same plot from the bing lexicon, where five star and one star was almost the same size, one star is a bit smaller compared to five stars. 
 
-##LSA
+## LSA
 Latent Semantic Analysis or simply LSA is a techique to identify and analyze the cooccurrences of words across documents. Coorccurrence suggest that the words are somewhat correlated, either by being synonymous or reflect a shared concept. Examples of shared concepts could be colors or cities. We want to extract meanings between documents and words, assuming that words that are close in meaning will appear in similar pieces of texts. 
 
 First we create a sparse document-feature matrix from the corpus. Here we turn a tidy one-term-per-document-per-row data frame into a TermDocumentMatrix from the quanteda package.
