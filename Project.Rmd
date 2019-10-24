@@ -772,8 +772,14 @@ ran
 
 # Machine learning
 
+
+
+
+
+
+
 ```{r}
-tweets_split = data_raw %>% select(id) %>% initial_split()
+tweets_split = data_clean %>% select(id) %>% initial_split()
 train_data = training(tweets_split)
 test_data = testing(tweets_split)
 ```
@@ -784,54 +790,73 @@ sparse_words = tokens_nlp %>% count(id, word) %>% inner_join(train_data) %>% cas
 
 ```{r}
 word_rownames = as.integer(rownames(sparse_words))
-joined = data_frame(id = word_rownames) %>% left_join(data_raw %>% select(id, reviews.rating))
+
+data_clean$reviews.rating[data_clean$reviews.rating == 1] <- 0
+data_clean$reviews.rating[data_clean$reviews.rating == 2] <- 0
+data_clean$reviews.rating[data_clean$reviews.rating == 3] <- 0
+data_clean$reviews.rating[data_clean$reviews.rating == 4] <- 1
+data_clean$reviews.rating[data_clean$reviews.rating == 5] <- 1
+
+joined = data_frame(id = word_rownames) %>% left_join(data_clean %>% select(id, reviews.rating))
 joined
 ```
 
+
+
+
+
 ```{r}
 #Neither
-
-joined$reviews.rating1[joined$reviews.rating == 1] <- 1
-joined$reviews.rating1[joined$reviews.rating == 2] <- 2
-joined$reviews.rating1[joined$reviews.rating == 3] <- 3
-joined$reviews.rating1[joined$reviews.rating == 4] <- 4
-joined$reviews.rating1[joined$reviews.rating == 5] <- 5
-
-joined$reviews.rating1
-
-j = joined$reviews.rating1 == 1
-log_model = cv.glmnet(sparse_words, j, family = "binomial", parallel = TRUE, keep = TRUE
+j = joined$reviews.rating == 1
+log_model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE
 )
 ```
 
 ```{r}
 model = log_model
-coefs = model$glmnet.fit %>%
+coefs = model$glmnet.fit %>% filter
   tidy() %>%
   filter(lambda == model$lambda.1se)
 
-intercept = coefs %>%
-  filter(term == "(Intercept)") %>%
-  pull(estimate)
+
 
 classifications = tokens_nlp %>%
   inner_join(test_data) %>%
   inner_join(coefs, by = c("word" = "term")) %>%
   group_by(id) %>%
   summarize(score = sum(estimate)) %>%
-  mutate(probability = plogis(intercept + score)) %>%
-  left_join(data_raw %>%
-    select(reviews.rating, id), by = "id")
+  mutate(probability = plogis(intercept + score)) %>% 
+  left_join(data_clean, by="id")
+classifications
 ```
 
 ```{r}
-a = table(classifications$reviews.rating == 5, classifications$probability > 0.5)
-
-a
+a = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
 ```
 
 ```{r}
 yardstick::accuracy(a)
 ```
 
+
+```{r}
+
+library(broom)
+
+coefs <- model$glmnet.fit %>%
+  tidy() %>%
+  filter(lambda == model$lambda.1se)
+
+coefs %>%
+  group_by(estimate > 0) %>%
+  top_n(15, abs(estimate)) %>%
+  ungroup() %>%
+  ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
+  geom_col(alpha = 0.8, show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    x = NULL,
+    title = "Coefficients that increase/decrease probability the most"
+  )
+```
 
