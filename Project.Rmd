@@ -825,7 +825,7 @@ classifications = tokens_nlp %>%
 ```
 
 ```{r}
-a = table(classifications$reviews.rating == 1, classifications$probability > 0.5)
+a = table(classifications$reviews.rating == 5, classifications$probability > 0.5)
 
 a
 ```
