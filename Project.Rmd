@@ -398,19 +398,10 @@ sentiment_afinn <- tokens_nlp %>%
   group_by(reviews.rating) %>%
   summarize(sentiment = sum(value)) %>%
   arrange(sentiment)
-<<<<<<< HEAD
-=======
-```
 
-And now we can plot it. The large numbers are even larger compared to the bing lexicon.
+```
 
 ```{r}
-sentiment_afinn
-```
-
-And herafter we can again plot it. 
->>>>>>> 4cdc5853dbd44845bb7551a6bb2c05f8b31a4fee
-
 n1 <- tokens_nlp %>% filter(reviews.rating == 1)
 s1 <- sentiment_afinn$sentiment[1] / count(n1)
 n2 <- tokens_nlp %>% filter(reviews.rating == 2)
