@@ -74,7 +74,7 @@ pacman::p_load(knitr, # For knitr to html
                plotly,
                rsample,
                glmnet,
-               doMC,
+               #doMC,
                broom,
                yardstick,
                lda, # For LDA-analysis
@@ -779,13 +779,17 @@ ran
 
 
 ```{r}
-tweets_split = data_clean %>% select(id) %>% initial_split()
-train_data = training(tweets_split)
-test_data = testing(tweets_split)
+split = data_clean %>% select(id, reviews.rating) %>% initial_split()
+train_data = training(split)
+test_data = testing(split)
+
+
+table(test_data$reviews.rating)
+
 ```
 
 ```{r}
-sparse_words = tokens_nlp %>% count(id, word) %>% inner_join(train_data) %>% cast_sparse(id, word, n)
+sparse_words = tokens_clean %>% count(id, word) %>% inner_join(train_data) %>% cast_sparse(id, word, n)
 ```
 
 ```{r}
@@ -798,7 +802,6 @@ data_clean$reviews.rating[data_clean$reviews.rating == 4] <- 1
 data_clean$reviews.rating[data_clean$reviews.rating == 5] <- 1
 
 joined = data_frame(id = word_rownames) %>% left_join(data_clean %>% select(id, reviews.rating))
-joined
 ```
 
 
@@ -806,7 +809,6 @@ joined
 
 
 ```{r}
-#Neither
 j = joined$reviews.rating == 1
 log_model = cv.glmnet(sparse_words, j, family = "binomial", keep = TRUE, intercept = FALSE
 )
@@ -818,7 +820,7 @@ coefs = model$glmnet.fit %>%
   tidy() %>%
   filter(lambda == model$lambda.1se)
 
-classifications = tokens_nlp %>%
+classifications = tokens_clean %>%
   inner_join(test_data) %>%
   inner_join(coefs, by = c("word" = "term")) %>%
   group_by(id) %>%
@@ -829,7 +831,7 @@ classifications
 ```
 
 ```{r}
-a = table(classifications$reviews.rating == 1, classifications$probability > 0.9)
+a = table(classifications$reviews.rating == 1, classifications$probability > 0.7)
 a
 ```
 
@@ -848,7 +850,7 @@ coefs <- model$glmnet.fit %>%
 
 coefs %>%
   group_by(estimate > 0) %>%
-  top_n(12, abs(estimate)) %>%
+  top_n(15, abs(estimate)) %>%
   ungroup() %>%
   ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
   geom_col(alpha = 0.8, show.legend = FALSE) +
